@@ -2,18 +2,22 @@
 <html lang="en" data-theme="deep">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bubble — raise it, back it, pop it</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bubble — operational improvement platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🫧</text></svg>">
 <style>
+/* ===================== tokens ===================== */
 :root{
+  color-scheme: dark;
   --deep:#07121e;
   --deep-2:#0b1c2c;
   --panel:rgba(255,255,255,.055);
+  --panel-2:rgba(255,255,255,.028);
   --panel-solid:#0e2033;
+  --input-bg:#0f2434;
   --line:rgba(255,255,255,.12);
   --line-soft:rgba(255,255,255,.07);
   --foam:#e9f3f8;
@@ -25,14 +29,17 @@
   --shadow:0 18px 50px rgba(0,0,0,.45);
 }
 html[data-theme="milk"]{
+  color-scheme: light;
   --deep:#eef3f6;
   --deep-2:#e2ecf1;
   --panel:rgba(255,255,255,.82);
+  --panel-2:rgba(255,255,255,.55);
   --panel-solid:#ffffff;
-  --line:rgba(11,40,60,.16);
-  --line-soft:rgba(11,40,60,.09);
+  --input-bg:#ffffff;
+  --line:rgba(11,40,60,.18);
+  --line-soft:rgba(11,40,60,.10);
   --foam:#0b2233;
-  --mist:#5a7285;
+  --mist:#566f80;
   --glow:#0d8ec2;
   --shadow:0 14px 34px rgba(16,53,74,.14);
 }
@@ -54,332 +61,444 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 a{color:var(--glow)}
 :focus-visible{outline:2px solid var(--glow);outline-offset:2px;border-radius:8px}
+[hidden]{display:none !important}
+.spacer{flex:1}
+.muted{color:var(--mist)}
+.small{font-size:12.5px}
 
-/* ---------- chrome ---------- */
+/* ===================== form controls (dark-mode safe) ===================== */
+input,select,textarea{
+  background-color:var(--input-bg);
+  color:var(--foam);
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:10px 12px;
+  width:100%;
+}
+select{
+  appearance:none;-webkit-appearance:none;
+  padding-right:30px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--mist) 50%),linear-gradient(135deg,var(--mist) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 53%,calc(100% - 11px) 53%;
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+}
+select option, select optgroup{
+  background-color:var(--input-bg);
+  color:var(--foam);
+}
+input[type="range"]{padding:0;border:0;background:transparent}
+input::placeholder,textarea::placeholder{color:var(--mist);opacity:.85}
+textarea{resize:vertical;min-height:86px;line-height:1.5}
+label.f{display:grid;gap:6px;font-size:13px;color:var(--mist)}
+label.f > span.req::after{content:" *";color:var(--hot)}
+.err{color:var(--hot);font-size:12.5px;margin-top:6px}
+input.bad,textarea.bad,select.bad{border-color:var(--hot)}
+
+/* ===================== chrome ===================== */
 .topbar{
   position:sticky;top:0;z-index:40;
-  display:flex;align-items:center;gap:16px;
-  padding:14px 20px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:12px 18px;
+  padding-top:calc(12px + env(safe-area-inset-top,0px));
   border-bottom:1px solid var(--line-soft);
   backdrop-filter:blur(14px);
-  background:linear-gradient(to bottom, rgba(7,18,30,.72), rgba(7,18,30,.28));
+  background:linear-gradient(to bottom, rgba(7,18,30,.78), rgba(7,18,30,.3));
 }
-html[data-theme="milk"] .topbar{background:linear-gradient(to bottom, rgba(255,255,255,.8), rgba(255,255,255,.4))}
+html[data-theme="milk"] .topbar{background:linear-gradient(to bottom, rgba(255,255,255,.86), rgba(255,255,255,.45))}
 .brand{display:flex;align-items:center;gap:10px;font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:20px;letter-spacing:-.03em}
 .brand .mark{width:26px;height:26px;border-radius:50%;
   background:radial-gradient(circle at 32% 28%, #fff 0 8%, rgba(89,210,255,.85) 26%, rgba(155,140,255,.55) 60%, rgba(255,107,129,.5) 100%);
   box-shadow:inset 0 0 8px rgba(255,255,255,.7), 0 0 18px rgba(89,210,255,.45)}
 .brand small{font-family:Inter;font-weight:500;font-size:12px;color:var(--mist);letter-spacing:0}
-.spacer{flex:1}
 .seg{display:flex;padding:3px;gap:3px;background:var(--panel);border:1px solid var(--line-soft);border-radius:999px}
-.seg button{border:0;background:transparent;color:var(--mist);padding:7px 15px;border-radius:999px;font-size:13px;font-weight:600}
+.seg button{border:0;background:transparent;color:var(--mist);padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;width:auto}
 .seg button[aria-pressed="true"]{background:var(--foam);color:var(--deep)}
 html[data-theme="milk"] .seg button[aria-pressed="true"]{background:#0b2233;color:#fff}
-.icon-btn{border:1px solid var(--line-soft);background:var(--panel);border-radius:10px;width:36px;height:36px;display:grid;place-items:center;font-size:15px}
-.who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mist);border:1px solid var(--line-soft);background:var(--panel);padding:6px 12px;border-radius:999px}
+.icon-btn{border:1px solid var(--line-soft);background:var(--panel);border-radius:10px;width:36px;height:36px;display:grid;place-items:center;font-size:15px;padding:0}
+.who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mist);border:1px solid var(--line-soft);background:var(--panel);padding:6px 12px;border-radius:999px;cursor:pointer}
 .who b{color:var(--foam);font-weight:600}
+.role-chip{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--line-soft);border-radius:999px;padding:2px 7px;color:var(--mist)}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 18px 110px}
 
-.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 90px}
-.btn{border:1px solid var(--line);background:var(--panel);color:var(--foam);padding:10px 16px;border-radius:11px;font-size:14px;font-weight:600}
+/* ===================== buttons ===================== */
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--foam);padding:10px 15px;border-radius:11px;font-size:14px;font-weight:600;width:auto}
 .btn:hover{border-color:var(--glow)}
 .btn.primary{background:linear-gradient(140deg,#7fe3ff,#5aa8ff);color:#05141f;border-color:transparent;box-shadow:0 10px 26px rgba(89,168,255,.28)}
 .btn.ghost{background:transparent}
 .btn.danger{background:linear-gradient(140deg,#ff8b9c,#ff5d74);color:#28060c;border-color:transparent}
-.btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
-.btn.sm{padding:7px 12px;font-size:13px;border-radius:9px}
+.btn.ok{background:linear-gradient(140deg,#7ce4c3,#42c79b);color:#04231a;border-color:transparent}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn.sm{padding:7px 11px;font-size:12.5px;border-radius:9px}
+.fab{position:fixed;right:20px;bottom:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:35;padding:14px 20px;border-radius:999px;font-size:15px}
 
-/* ---------- user view ---------- */
-.hero{display:grid;grid-template-columns:1.25fr .75fr;gap:22px;align-items:stretch;margin-bottom:26px}
-@media (max-width:820px){.hero{grid-template-columns:1fr}}
-.hero-card{
-  position:relative;overflow:hidden;
-  border:1px solid var(--line-soft);border-radius:22px;padding:30px;
-  background:var(--panel);box-shadow:var(--shadow);
-}
-.hero-card h1{font-size:clamp(30px,4.4vw,46px);line-height:1.02;max-width:16ch}
-.hero-card p{color:var(--mist);max-width:52ch;font-size:15px;line-height:1.6;margin:14px 0 22px}
-.hero-orbs{position:absolute;inset:0;pointer-events:none;opacity:.6}
-.orb{position:absolute;border-radius:50%;background:radial-gradient(circle at 30% 26%, rgba(255,255,255,.75) 0 6%, rgba(89,210,255,.3) 30%, rgba(155,140,255,.14) 70%, transparent 74%);border:1px solid rgba(255,255,255,.14)}
+/* ===================== pills / chips ===================== */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line-soft);color:var(--mist);white-space:nowrap}
+.pill .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.pill.ok{color:var(--ok);border-color:rgba(79,209,165,.35)}
+.pill.warn{color:var(--warn);border-color:rgba(255,178,92,.35)}
+.pill.hot{color:var(--hot);border-color:rgba(255,107,129,.4)}
+.pill.demo{color:#9b8cff;border-color:rgba(155,140,255,.4)}
+.chipbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line-soft);background:var(--panel);color:var(--mist);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;width:auto}
+.chip[aria-pressed="true"]{background:var(--foam);color:var(--deep);border-color:transparent}
+html[data-theme="milk"] .chip[aria-pressed="true"]{background:#0b2233;color:#fff}
+
+/* ===================== user home ===================== */
+.hero{display:grid;grid-template-columns:1.25fr .75fr;gap:20px;margin-bottom:22px}
+@media (max-width:860px){.hero{grid-template-columns:1fr}}
+.hero-card{position:relative;overflow:hidden;border:1px solid var(--line-soft);border-radius:22px;padding:28px;background:var(--panel);box-shadow:var(--shadow)}
+.hero-card h1{font-size:clamp(27px,3.9vw,40px);line-height:1.04;max-width:17ch}
+.hero-card p{color:var(--mist);max-width:54ch;font-size:14.5px;line-height:1.6;margin:13px 0 20px}
+.hero-orbs{position:absolute;inset:0;pointer-events:none;opacity:.55}
+.orb{position:absolute;border-radius:50%;background:radial-gradient(circle at 30% 26%, rgba(255,255,255,.7) 0 6%, rgba(89,210,255,.28) 30%, rgba(155,140,255,.12) 70%, transparent 74%);border:1px solid rgba(255,255,255,.14)}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.stat{border:1px solid var(--line-soft);border-radius:16px;padding:16px 18px;background:var(--panel)}
-.stat .n{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:30px;line-height:1}
-.stat .l{color:var(--mist);font-size:12.5px;margin-top:6px}
-
-.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line-soft);margin:6px 0 18px}
-.tabs button{background:none;border:0;padding:10px 2px;color:var(--mist);font-weight:600;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.stat{border:1px solid var(--line-soft);border-radius:16px;padding:15px 17px;background:var(--panel)}
+.stat .n{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:28px;line-height:1}
+.stat .l{color:var(--mist);font-size:12px;margin-top:6px}
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line-soft);margin:4px 0 16px;flex-wrap:wrap}
+.tabs button{background:none;border:0;padding:10px 2px;color:var(--mist);font-weight:600;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px;width:auto}
 .tabs button[aria-selected="true"]{color:var(--foam);border-bottom-color:var(--glow)}
-
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
-.card{
-  border:1px solid var(--line-soft);border-radius:18px;padding:18px;background:var(--panel);
-  display:flex;flex-direction:column;gap:10px;position:relative;
-}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.card{border:1px solid var(--line-soft);border-radius:18px;padding:17px;background:var(--panel);display:flex;flex-direction:column;gap:9px;cursor:pointer}
 .card:hover{border-color:var(--line)}
-.card .area{font-size:12px;color:var(--mist)}
-.card h3{font-size:17px;line-height:1.25}
-.card .sol{font-size:13.5px;color:var(--mist);line-height:1.5}
-.card .foot{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:10px;border-top:1px solid var(--line-soft)}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border-radius:999px;border:1px solid var(--line-soft);color:var(--mist)}
-.pill .dot{width:8px;height:8px;border-radius:50%}
-.pill.live{color:var(--ok);border-color:rgba(79,209,165,.35)}
-.pill.warm{color:var(--warn);border-color:rgba(255,178,92,.35)}
-.pill.hot{color:var(--hot);border-color:rgba(255,107,129,.38)}
-.backers{font-size:12.5px;color:var(--mist)}
-.empty{border:1px dashed var(--line);border-radius:18px;padding:40px 24px;text-align:center;color:var(--mist)}
+.card .kicker{font-size:11.5px;color:var(--mist)}
+.card h3{font-size:16.5px;line-height:1.3}
+.card .sol{font-size:13px;color:var(--mist);line-height:1.5}
+.card .foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:10px;border-top:1px solid var(--line-soft)}
+.empty{border:1px dashed var(--line);border-radius:18px;padding:38px 22px;text-align:center;color:var(--mist)}
 .empty b{display:block;color:var(--foam);font-size:16px;margin-bottom:6px;font-family:"Bricolage Grotesque",sans-serif}
 
-/* ---------- admin ---------- */
-.gate{max-width:420px;margin:12vh auto;text-align:center}
-.gate .mark-lg{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;
+/* ===================== ops ===================== */
+.gate{max-width:420px;margin:10vh auto;text-align:center}
+.gate .mark-lg{width:62px;height:62px;border-radius:50%;margin:0 auto 16px;
   background:radial-gradient(circle at 32% 28%, #fff 0 7%, rgba(89,210,255,.8) 28%, rgba(155,140,255,.5) 62%, rgba(255,107,129,.45) 100%);
   box-shadow:inset 0 0 14px rgba(255,255,255,.6), 0 0 34px rgba(89,210,255,.35)}
-.gate input{width:100%;text-align:center;letter-spacing:.4em;font-size:20px;padding:14px;margin:18px 0 12px;
-  background:var(--panel);border:1px solid var(--line);border-radius:12px}
-.hint{color:var(--mist);font-size:12.5px}
+.gate input{text-align:center;letter-spacing:.4em;font-size:20px;padding:13px;margin:16px 0 12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--line-soft);border-radius:14px;padding:12px 14px;background:var(--panel);cursor:pointer;text-align:left;width:100%}
+.kpi[aria-pressed="true"]{border-color:var(--glow);background:rgba(89,210,255,.09)}
+.kpi .n{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:24px;line-height:1}
+.kpi .l{font-size:11.5px;color:var(--mist);margin-top:5px}
+.toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:12px}
+.field-input{width:auto;min-width:132px;background-color:var(--panel);border:1px solid var(--line-soft);border-radius:11px;padding:9px 12px;font-size:13px}
+select.field-input{background-color:var(--panel);padding-right:30px}
+html[data-theme="deep"] select.field-input option{background-color:var(--panel-solid)}
+.filters{display:none;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:14px;border:1px solid var(--line-soft);border-radius:16px;background:var(--panel-2);margin-bottom:14px}
+.filters.open{display:grid}
 
-.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
-.field-input{background:var(--panel);border:1px solid var(--line-soft);border-radius:11px;padding:9px 12px;font-size:13.5px;min-width:130px}
-select.field-input{appearance:none;padding-right:28px;
-  background-image:linear-gradient(45deg,transparent 50%,var(--mist) 50%),linear-gradient(135deg,var(--mist) 50%,transparent 50%);
-  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
-
-#field{
-  position:relative;height:min(74vh,720px);min-height:430px;
-  border:1px solid var(--line-soft);border-radius:24px;overflow:hidden;
-  background:
-    radial-gradient(60% 60% at 50% 45%, rgba(89,210,255,.10), transparent 70%),
-    var(--panel);
-}
-.bub{
-  position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.28);
-  display:grid;place-content:center;text-align:center;padding:6px;
-  cursor:pointer;color:#fff;
-  transition:transform .18s ease, filter .18s ease;
-  animation:drift 9s ease-in-out infinite;
-}
-html[data-theme="milk"] .bub{color:#06202f;border-color:rgba(255,255,255,.7)}
-.bub:hover{transform:scale(1.05);filter:brightness(1.12);z-index:5}
-.bub .b-area{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;line-height:1.1;max-width:92%;overflow:hidden}
-.bub .b-meta{font-size:10.5px;opacity:.85;margin-top:3px}
-.bub.tiny .b-meta{display:none}
+#field{position:relative;height:min(70vh,690px);min-height:420px;border:1px solid var(--line-soft);border-radius:24px;overflow:hidden;
+  background:radial-gradient(60% 60% at 50% 45%, rgba(89,210,255,.10), transparent 70%), var(--panel)}
+.bub{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.28);display:grid;place-content:center;text-align:center;padding:6px;cursor:pointer;color:#fff;overflow:hidden;
+  transition:transform .18s ease, filter .18s ease;animation:drift 9s ease-in-out infinite;width:auto}
+html[data-theme="milk"] .bub{color:#06202f;border-color:rgba(255,255,255,.75)}
+.bub:hover{transform:scale(1.05);filter:brightness(1.12);z-index:6}
+.bub .b-t{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;line-height:1.1;max-width:94%;overflow:hidden}
+.bub .b-m{font-size:10px;line-height:1.3;opacity:.88;margin-top:3px;max-width:96%}
+.bub.tiny .b-m{display:none}
+.bub.pulse{animation:drift 9s ease-in-out infinite, pulseRing 2.2s ease-in-out infinite}
 @keyframes drift{0%,100%{translate:0 0}50%{translate:0 -7px}}
-@media (prefers-reduced-motion:reduce){.bub{animation:none}}
+@keyframes pulseRing{0%,100%{box-shadow:0 0 0 3px rgba(255,107,129,.35), 0 0 26px rgba(255,107,129,.35)}50%{box-shadow:0 0 0 10px rgba(255,107,129,.12), 0 0 40px rgba(255,107,129,.5)}}
+@media (prefers-reduced-motion:reduce){.bub,.bub.pulse{animation:none}}
 .bub.popping{animation:pop .45s ease forwards}
 @keyframes pop{40%{transform:scale(1.22);filter:brightness(1.5)}100%{transform:scale(.2);opacity:0}}
-.field-note{position:absolute;left:16px;bottom:14px;font-size:12px;color:var(--mist);pointer-events:none}
+.field-note{position:absolute;left:14px;bottom:12px;right:14px;font-size:11.5px;color:var(--mist);pointer-events:none;display:flex;gap:14px;flex-wrap:wrap}
+.legend{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
 
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;color:var(--mist);font-weight:600;font-size:12px;padding:10px 12px;border-bottom:1px solid var(--line)}
-td{padding:12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
-tbody tr{cursor:pointer}
-tbody tr:hover{background:var(--panel)}
-.rank{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;color:var(--mist);width:34px}
-.sizebar{height:7px;border-radius:99px;background:linear-gradient(90deg,var(--glow),#9b8cff);min-width:6px}
 .tablewrap{border:1px solid var(--line-soft);border-radius:18px;overflow:auto;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--mist);font-weight:600;font-size:11.5px;padding:10px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--panel-2)}
+.meter{height:7px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;min-width:60px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--glow),#9b8cff)}
+.meter.hot i{background:linear-gradient(90deg,var(--r4),var(--r5))}
 
-/* ---------- modal ---------- */
-.veil{position:fixed;inset:0;background:rgba(3,10,17,.68);backdrop-filter:blur(6px);z-index:60;display:grid;place-items:center;padding:18px}
-.veil[hidden]{display:none}
-.modal{
-  width:min(720px,100%);max-height:88vh;overflow:auto;
-  background:var(--panel-solid);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);
-}
-.modal-head{display:flex;align-items:flex-start;gap:14px;padding:22px 24px 0}
-.modal-head h2{font-size:22px;flex:1;line-height:1.2}
-.modal-body{padding:18px 24px 24px;display:grid;gap:16px}
-.modal-foot{position:sticky;bottom:0;display:flex;gap:10px;justify-content:flex-end;padding:16px 24px;
-  border-top:1px solid var(--line-soft);background:var(--panel-solid)}
-label.f{display:grid;gap:6px;font-size:13px;color:var(--mist)}
-label.f input,label.f textarea,label.f select{
-  background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:14px;color:var(--foam);width:100%}
-html[data-theme="milk"] label.f input,html[data-theme="milk"] label.f textarea,html[data-theme="milk"] label.f select{background:#f6fafc}
-label.f textarea{resize:vertical;min-height:84px;line-height:1.5}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media (max-width:560px){.grid2{grid-template-columns:1fr}}
-.rate{display:flex;gap:8px}
-.rate button{flex:1;padding:11px 0;border-radius:11px;border:1px solid var(--line);background:transparent;color:var(--mist);font-weight:700}
+/* queue */
+.queue-group{margin-bottom:18px}
+.queue-group h3{font-size:15px;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.qrow{display:flex;gap:12px;align-items:center;border:1px solid var(--line-soft);border-radius:14px;padding:12px 14px;background:var(--panel);margin-bottom:8px;cursor:pointer;flex-wrap:wrap}
+.qrow:hover{border-color:var(--line)}
+.qrow .t{font-weight:600;font-size:14px;flex:1;min-width:220px}
+
+/* ===================== modal ===================== */
+.veil{position:fixed;inset:0;background:rgba(3,10,17,.7);backdrop-filter:blur(6px);z-index:60;display:grid;place-items:center;padding:14px}
+.modal{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--panel-solid);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.modal.wide{width:min(900px,100%)}
+.modal-head{display:flex;align-items:flex-start;gap:12px;padding:20px 22px 0}
+.modal-head h2{font-size:20px;flex:1;line-height:1.25}
+.modal-body{padding:16px 22px 22px;display:grid;gap:14px}
+.modal-foot{position:sticky;bottom:0;display:flex;gap:9px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--line-soft);background:var(--panel-solid);flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+@media (max-width:620px){.grid2,.grid3{grid-template-columns:1fr}}
+.rate{display:flex;gap:7px}
+.rate button{flex:1;padding:10px 0;border-radius:11px;border:1px solid var(--line);background:transparent;color:var(--mist);font-weight:700;width:auto}
 .rate button[aria-pressed="true"]{color:#06141f;border-color:transparent}
 .rate button[data-v="1"][aria-pressed="true"]{background:var(--r1)}
 .rate button[data-v="2"][aria-pressed="true"]{background:var(--r2)}
 .rate button[data-v="3"][aria-pressed="true"]{background:var(--r3)}
 .rate button[data-v="4"][aria-pressed="true"]{background:var(--r4)}
 .rate button[data-v="5"][aria-pressed="true"]{background:var(--r5)}
-.rate-legend{font-size:12px;color:var(--mist);margin-top:6px}
-.switchrow{display:flex;gap:10px}
-.switchrow button{flex:1;border:1px solid var(--line);background:transparent;color:var(--mist);padding:12px;border-radius:12px;text-align:left;font-size:13px}
+.switchrow{display:flex;gap:9px;flex-wrap:wrap}
+.switchrow button{flex:1;min-width:190px;border:1px solid var(--line);background:transparent;color:var(--mist);padding:11px;border-radius:12px;text-align:left;font-size:12.5px;width:auto}
 .switchrow button[aria-pressed="true"]{border-color:var(--glow);color:var(--foam);background:rgba(89,210,255,.08)}
-.switchrow b{display:block;font-size:14px;color:inherit;font-weight:600;margin-bottom:2px}
-.timebox{border:1px solid rgba(89,210,255,.3);background:rgba(89,210,255,.06);border-radius:14px;padding:16px;display:grid;gap:14px}
-.timebox h4{margin:0;font-size:13.5px;font-weight:600;color:var(--glow)}
-.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.dg{border:1px solid var(--line-soft);border-radius:12px;padding:12px}
-.dg .k{font-size:11.5px;color:var(--mist)}
+.switchrow b{display:block;font-size:13.5px;color:inherit;font-weight:600;margin-bottom:2px}
+.box{border:1px solid var(--line-soft);border-radius:14px;padding:15px}
+.box.accent{border-color:rgba(89,210,255,.3);background:rgba(89,210,255,.06)}
+.box.warn{border-color:rgba(255,178,92,.35);background:rgba(255,178,92,.07)}
+.box.hot{border-color:rgba(255,107,129,.35);background:rgba(255,107,129,.07)}
+.box h4{margin:0 0 9px;font-size:13px;font-weight:600;color:var(--mist);font-family:Inter}
+.box p{margin:0;line-height:1.6;font-size:14px;white-space:pre-wrap}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.dg{border:1px solid var(--line-soft);border-radius:12px;padding:11px}
+.dg .k{font-size:11px;color:var(--mist)}
 .dg .v{font-size:14px;margin-top:4px;font-weight:600}
-.block{border:1px solid var(--line-soft);border-radius:14px;padding:16px}
-.block .k{font-size:11.5px;color:var(--mist);margin-bottom:7px}
-.block p{margin:0;line-height:1.6;font-size:14.5px;white-space:pre-wrap}
-.growth{height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:8px}
-.growth i{display:block;height:100%;background:linear-gradient(90deg,var(--r1),var(--r4),var(--r5))}
-.answer-live{border-left:3px solid var(--ok);padding-left:14px}
-
-.toast{position:fixed;left:50%;bottom:26px;translate:-50% 0;z-index:90;
-  background:var(--panel-solid);border:1px solid var(--line);border-radius:12px;padding:12px 18px;font-size:14px;
-  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s, translate .2s}
+.pressure{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pnum{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:38px;line-height:1}
+.pfactors{display:grid;gap:7px;flex:1;min-width:240px}
+.pf{display:grid;grid-template-columns:118px 1fr 58px;gap:9px;align-items:center;font-size:12px;color:var(--mist)}
+.pf .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.pf .bar i{display:block;height:100%;background:var(--glow)}
+.timeline{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.tl{display:grid;grid-template-columns:104px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+.tl:last-child{border-bottom:0}
+.tl .when{color:var(--mist);font-size:11.5px}
+.tl .what b{font-weight:600}
+.diff{font-size:12.5px;margin-top:4px;color:var(--mist)}
+.diff .from{text-decoration:line-through;opacity:.75}
+.diff .to{color:var(--foam)}
+.dup{border:1px solid rgba(255,178,92,.4);background:rgba(255,178,92,.07);border-radius:14px;padding:13px}
+.dup-item{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 0;border-top:1px solid var(--line-soft)}
+.dup-item:first-of-type{border-top:0}
+.dup-item .t{flex:1;min-width:200px;font-size:13.5px}
+.toast{position:fixed;left:50%;bottom:24px;translate:-50% 0;z-index:90;background:var(--panel-solid);border:1px solid var(--line);border-radius:12px;padding:11px 17px;font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s, translate .2s;max-width:88vw}
 .toast.show{opacity:1;translate:-50% -8px}
-.fab{position:fixed;right:22px;bottom:22px;z-index:35;padding:15px 22px;border-radius:999px;font-size:15px}
+.demo-banner{display:block;line-height:1.5;border:1px dashed rgba(155,140,255,.45);background:rgba(155,140,255,.07);border-radius:14px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:var(--mist)}
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="mark"></span>Bubble<small>raise it · back it · pop it</small></div>
+  <div class="brand"><span class="mark"></span>Bubble<small>raise · support · resolve</small></div>
   <div class="spacer"></div>
-  <div class="seg" role="group" aria-label="Choose view">
-    <button id="tabUser" aria-pressed="true">I raise bubbles</button>
-    <button id="tabAdmin" aria-pressed="false">Ops team</button>
+  <div class="seg" role="group" aria-label="Choose workspace">
+    <button id="tabUser" aria-pressed="true">My workspace</button>
+    <button id="tabOps" aria-pressed="false">Ops</button>
   </div>
-  <button class="icon-btn" id="themeBtn" title="Switch light / deep">◐</button>
-  <div class="who" id="whoChip" title="Click to change who you are"><b id="whoName">—</b></div>
+  <button class="icon-btn" id="themeBtn" title="Switch light / dark theme">◐</button>
+  <div class="who" id="whoChip" title="Change who you are signed in as">
+    <b id="whoName">—</b><span class="role-chip" id="whoRole">employee</span>
+  </div>
 </header>
 
 <main class="wrap">
-  <!-- ============ USER ============ -->
-  <section id="userView">
-    <div class="hero">
-      <div class="hero-card">
-        <div class="hero-orbs">
-          <div class="orb" style="width:120px;height:120px;right:-20px;top:-30px"></div>
-          <div class="orb" style="width:66px;height:66px;right:96px;bottom:24px"></div>
-          <div class="orb" style="width:34px;height:34px;right:26px;bottom:78px"></div>
-        </div>
-        <h1>Something slowing your work down? Float it.</h1>
-        <p>Describe the problem, suggest your fix, rate how much it hurts. Every colleague who backs your bubble makes it bigger — and a big bubble is impossible for the ops team to miss.</p>
-        <button class="btn primary" id="newBubbleBtn">Raise a bubble</button>
+
+<!-- ============================ USER ============================ -->
+<section id="userView">
+  <div class="hero">
+    <div class="hero-card">
+      <div class="hero-orbs">
+        <div class="orb" style="width:120px;height:120px;right:-20px;top:-30px"></div>
+        <div class="orb" style="width:64px;height:64px;right:94px;bottom:22px"></div>
+        <div class="orb" style="width:32px;height:32px;right:24px;bottom:76px"></div>
       </div>
-      <div class="stats" id="userStats"></div>
+      <h1>Something getting in the way? Raise a bubble.</h1>
+      <p>Describe the problem, suggest a fix, rate the impact. Anyone who hits the same thing can support it — and the more people it affects, the bigger the bubble grows, until ops cannot miss it. Nothing is closed without an answer.</p>
+      <button class="btn primary" id="newBubbleBtn">Raise a bubble</button>
     </div>
+    <div class="stats" id="userStats"></div>
+  </div>
 
-    <div class="tabs" role="tablist">
-      <button id="tabMine" role="tab" aria-selected="true">My bubbles</button>
-      <button id="tabAll" role="tab" aria-selected="false">Everyone's bubbles</button>
-      <button id="tabDone" role="tab" aria-selected="false">Popped &amp; archived</button>
-    </div>
-    <div class="cards" id="userCards"></div>
-  </section>
+  <div class="tabs" role="tablist">
+    <button id="tabMine" role="tab" aria-selected="true">My bubbles</button>
+    <button id="tabExplore" role="tab" aria-selected="false">Explore</button>
+    <button id="tabSupported" role="tab" aria-selected="false">Supported by me</button>
+  </div>
 
-  <!-- ============ ADMIN ============ -->
-  <section id="adminView" hidden>
-    <div class="gate" id="gate">
-      <div class="mark-lg"></div>
-      <h1 style="font-size:26px">Ops team sign-in</h1>
-      <p class="hint" style="margin-top:8px">The floor is waiting on you.</p>
-      <input id="pin" type="password" inputmode="numeric" maxlength="12" placeholder="••••" aria-label="Access code" />
-      <button class="btn primary" id="pinBtn" style="width:100%">Open the bubble field</button>
-      <p class="hint" style="margin-top:14px">Demo code: <b>1234</b> — change it in settings once you're in.</p>
-    </div>
+  <div class="chipbar" id="userChips"></div>
+  <div class="cards" id="userCards"></div>
+</section>
 
-    <div id="adminBoard" hidden>
-      <div class="toolbar">
-        <div class="seg" role="group" aria-label="Field or list">
-          <button id="viewField" aria-pressed="true">Bubble field</button>
-          <button id="viewList" aria-pressed="false">List</button>
-        </div>
-        <select class="field-input" id="fArea"><option value="">All areas</option></select>
-        <select class="field-input" id="fType">
-          <option value="">Internal + customer</option>
-          <option value="internal">Internal only</option>
-          <option value="customer">Customer-facing only</option>
-        </select>
-        <select class="field-input" id="fSort">
-          <option value="size">Sort: biggest first</option>
-          <option value="rating">Sort: severity</option>
-          <option value="area">Sort: area of work</option>
-          <option value="age">Sort: oldest first</option>
-          <option value="backers">Sort: most backed</option>
-        </select>
-        <input class="field-input" id="fSearch" placeholder="Search problems…" style="flex:1;min-width:160px" />
-        <div class="spacer"></div>
-        <button class="btn sm ghost" id="archiveBtn">Archive</button>
-        <button class="btn sm ghost" id="settingsBtn">Settings</button>
+<!-- ============================ OPS ============================ -->
+<section id="opsView" hidden>
+  <div class="gate" id="gate">
+    <div class="mark-lg"></div>
+    <h1 style="font-size:25px">Ops sign-in</h1>
+    <p class="muted small" style="margin-top:8px">Demo access only — see the note below.</p>
+    <input id="pin" type="password" inputmode="numeric" maxlength="12" placeholder="••••" aria-label="Access code" />
+    <button class="btn primary" id="pinBtn" style="width:100%">Open the bubble field</button>
+    <p class="muted small" style="margin-top:14px">Demo code <b>1234</b>. This PIN is a prototype stand-in, not real security — production would sit behind SSO with roles.</p>
+  </div>
+
+  <div id="opsBoard" hidden>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Ops view">
+        <button id="viewField" aria-pressed="true">Field</button>
+        <button id="viewList" aria-pressed="false">List</button>
+        <button id="viewQueue" aria-pressed="false">Attention</button>
+        <button id="viewDeletions" aria-pressed="false">Deletions</button>
+        <button id="viewInsights" aria-pressed="false">Insights</button>
       </div>
-
-      <div id="field"><div class="field-note" id="fieldNote"></div></div>
-      <div id="listWrap" hidden class="tablewrap">
-        <table>
-          <thead><tr>
-            <th class="rank">#</th><th>Problem</th><th>Area</th><th>Severity</th><th>Backers</th><th>Age</th><th>Pressure</th>
-          </tr></thead>
-          <tbody id="listBody"></tbody>
-        </table>
-      </div>
+      <input class="field-input" id="fSearch" placeholder="Search problem, process, unit…" style="flex:1;min-width:180px" />
+      <select class="field-input" id="fSort" aria-label="Sort by">
+        <option value="pressure">Sort: bubble pressure</option>
+        <option value="size">Sort: size (supporters)</option>
+        <option value="severity">Sort: severity</option>
+        <option value="supporters">Sort: supporters</option>
+        <option value="age">Sort: age</option>
+        <option value="unit">Sort: unit</option>
+        <option value="area">Sort: area</option>
+        <option value="status">Sort: status</option>
+        <option value="owner">Sort: owner</option>
+        <option value="impact">Sort: patient impact</option>
+      </select>
+      <button class="btn sm ghost" id="filtersBtn">Filters</button>
+      <button class="btn sm ghost" id="archiveBtn">Archive</button>
+      <button class="btn sm ghost" id="settingsBtn">Settings</button>
     </div>
-  </section>
+
+    <div class="filters" id="filters">
+      <label class="f">Unit<select class="field-input" id="fUnit"></select></label>
+      <label class="f">Area<select class="field-input" id="fArea"></select></label>
+      <label class="f">Process<select class="field-input" id="fProcess"></select></label>
+      <label class="f">Type<select class="field-input" id="fType">
+        <option value="">Internal + patient-facing</option>
+        <option value="internal">Internal</option>
+        <option value="patient">patient-facing</option>
+      </select></label>
+      <label class="f">Severity<select class="field-input" id="fSev">
+        <option value="">Any severity</option>
+        <option value="5">5 — critical</option><option value="4">4 — high</option>
+        <option value="3">3 — significant</option><option value="2">2 — moderate</option>
+        <option value="1">1 — low</option>
+      </select></label>
+      <label class="f">Status<select class="field-input" id="fStatus"></select></label>
+      <label class="f">Owner<select class="field-input" id="fOwner"></select></label>
+      <label class="f">Age<select class="field-input" id="fAge">
+        <option value="">Any age</option>
+        <option value="0-7">0–7 days</option><option value="8-30">8–30 days</option>
+        <option value="31-49">31–49 days (growing)</option><option value="50-9999">50+ days (breached)</option>
+      </select></label>
+      <label class="f">Raised from<input class="field-input" type="date" id="fFrom" /></label>
+      <label class="f">Raised to<input class="field-input" type="date" id="fTo" /></label>
+      <label class="f" style="align-self:end"><button class="btn sm" id="clearFilters">Clear all filters</button></label>
+    </div>
+
+    <div id="field"></div>
+    <div id="listWrap" hidden class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Problem</th><th>Unit</th><th>Area</th><th>Sev</th><th>Support</th>
+          <th>Status</th><th>Owner</th><th>Age</th><th>Pressure</th>
+        </tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+    <div id="queueWrap" hidden></div>
+    <div id="deletionsWrap" hidden></div>
+    <div id="insightsWrap" hidden></div>
+  </div>
+</section>
 </main>
 
 <button class="btn primary fab" id="fabNew">＋ Raise a bubble</button>
 
-<!-- ===== form modal ===== -->
+<!-- ===== raise / edit modal ===== -->
 <div class="veil" id="formVeil" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="formTitle">
     <div class="modal-head"><h2 id="formTitle">Raise a bubble</h2><button class="icon-btn" data-close>✕</button></div>
     <div class="modal-body">
+      <div id="dupPanel"></div>
       <div class="grid2">
-        <label class="f">Your name or employee ID<input id="iName" placeholder="e.g. Ananya R / EMP-2214" /></label>
-        <label class="f">Area of work<input id="iArea" list="areaList" placeholder="e.g. Warehouse dispatch" /></label>
+        <label class="f"><span class="req">Your name or ID</span><input id="iName" placeholder="e.g. A. Rivera / EMP-2214" /></label>
+        <label class="f"><span class="req">Unit / organisation area</span><select id="iUnit"></select></label>
       </div>
-      <datalist id="areaList"></datalist>
-      <label class="f">Which process is affected?<input id="iProcess" placeholder="e.g. Nightly stock reconciliation" /></label>
+      <div class="grid2">
+        <label class="f"><span class="req">Area of work</span><input id="iArea" list="areaList" placeholder="e.g. patient support" /><datalist id="areaList"></datalist></label>
+        <label class="f"><span class="req">Process affected</span><input id="iProcess" list="processList" placeholder="e.g. Looking up a patient record" /><datalist id="processList"></datalist></label>
+      </div>
 
       <div>
-        <div style="font-size:13px;color:var(--mist);margin-bottom:7px">Where does this sit?</div>
+        <div class="small muted" style="margin-bottom:7px">Who feels this?</div>
         <div class="switchrow" id="typeRow">
-          <button data-type="internal" aria-pressed="true"><b>Internal work</b>Stays open until it's answered</button>
-          <button data-type="customer" aria-pressed="false"><b>Customer-facing</b>Lives 50 days, grows from day 31</button>
+          <button data-type="internal" aria-pressed="true"><b>Internal</b>Slows the team down; no ageing clock</button>
+          <button data-type="patient" aria-pressed="false"><b>patient-facing</b>Escalates from day 31, breach at day 50</button>
         </div>
       </div>
 
-      <label class="f">The problem<textarea id="iProblem" placeholder="What actually happens, and how often?"></textarea></label>
-      <label class="f">Your solution or fix<textarea id="iSolution" placeholder="What would you change? Even a rough idea counts."></textarea></label>
+      <label class="f"><span class="req">The problem</span><textarea id="iProblem" placeholder="What actually happens, how often, and what it costs."></textarea></label>
+      <label class="f"><span>Suggested solution or fix <i class="muted" style="font-style:normal">(optional)</i></span><textarea id="iSolution" placeholder="Even a rough idea helps ops act faster."></textarea></label>
 
       <div>
-        <div style="font-size:13px;color:var(--mist);margin-bottom:7px">How badly does this hurt?</div>
+        <div class="small muted" style="margin-bottom:7px">Severity / impact</div>
         <div class="rate" id="rateRow">
-          <button data-v="1" aria-pressed="false">1</button>
-          <button data-v="2" aria-pressed="false">2</button>
-          <button data-v="3" aria-pressed="true">3</button>
-          <button data-v="4" aria-pressed="false">4</button>
+          <button data-v="1" aria-pressed="false">1</button><button data-v="2" aria-pressed="false">2</button>
+          <button data-v="3" aria-pressed="true">3</button><button data-v="4" aria-pressed="false">4</button>
           <button data-v="5" aria-pressed="false">5</button>
         </div>
-        <div class="rate-legend" id="rateLegend"></div>
+        <div class="small muted" id="rateLegend" style="margin-top:6px"></div>
       </div>
 
-      <div class="timebox" id="timeBox" hidden>
-        <h4>Customer-facing impact</h4>
-        <div class="grid2">
-          <label class="f">Time lost each week (minutes)<input id="iLost" type="number" min="0" placeholder="e.g. 90" /></label>
-          <label class="f">Time it took you to raise this (minutes)<input id="iSpent" type="number" min="0" placeholder="e.g. 10" /></label>
+      <div class="box accent" id="impactBox" hidden>
+        <h4>patient impact — this is the evidence ops needs</h4>
+        <div class="grid3">
+          <label class="f">How often does it happen?<select id="iFreq">
+            <option value="1">About once a week</option>
+            <option value="3">A few times a week</option>
+            <option value="10" selected>Several times a day</option>
+            <option value="25">On most interactions</option>
+          </select></label>
+          <label class="f">Time lost per occurrence (min)<input id="iPer" type="number" min="0" step="0.5" placeholder="e.g. 4" /></label>
+          <label class="f">patients affected per week<input id="iPeople" type="number" min="0" placeholder="e.g. 60" /></label>
         </div>
-        <label class="f">Will your fix win that time back?
-          <select id="iSaves">
-            <option value="yes">Yes — it removes the delay</option>
+        <div class="grid2" style="margin-top:12px">
+          <label class="f">Expected time saved per week if fixed (min)<input id="iSaved" type="number" min="0" placeholder="e.g. 240" /></label>
+          <label class="f">Does the fix prevent errors or risk?<select id="iPrevents">
+            <option value="yes">Yes — it removes the risk</option>
             <option value="partly">Partly — it reduces it</option>
-            <option value="no">No — but it prevents errors</option>
-          </select>
-        </label>
+            <option value="no">No — it is a time saving only</option>
+          </select></label>
+        </div>
+        <div class="small muted" id="impactPreview" style="margin-top:10px"></div>
       </div>
+
+      <label class="f">Visibility of your name
+        <select id="iPrivacy">
+          <option value="named">Named — everyone sees who raised it</option>
+          <option value="confidential">Confidential — only ops sees my name</option>
+          <option value="anonymous">Anonymous — hidden from other users</option>
+        </select>
+      </label>
+      <div class="small muted">Date, time, unit and a bubble ID are recorded automatically. Please do not include names of individual patients or any confidential data.</div>
+      <div class="err" id="formErr" hidden></div>
     </div>
     <div class="modal-foot">
+      <span class="small muted" id="formTimer" style="margin-right:auto"></span>
       <button class="btn ghost" data-close>Cancel</button>
-      <button class="btn primary" id="submitBubble">Float it</button>
+      <button class="btn primary" id="submitBubble">Raise it</button>
     </div>
   </div>
 </div>
 
 <!-- ===== detail modal ===== -->
 <div class="veil" id="detailVeil" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="dTitle">
     <div class="modal-head">
-      <h2 id="dTitle"></h2><button class="icon-btn" data-close>✕</button>
+      <div style="flex:1">
+        <div class="small muted" id="dRef"></div>
+        <h2 id="dTitle"></h2>
+      </div>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="tabs" style="margin:10px 22px 0" role="tablist">
+      <button id="dTabOverview" role="tab" aria-selected="true">Overview</button>
+      <button id="dTabActivity" role="tab" aria-selected="false">Activity &amp; history</button>
+      <button id="dTabOps" role="tab" aria-selected="false" hidden>Ops actions</button>
     </div>
     <div class="modal-body" id="dBody"></div>
     <div class="modal-foot" id="dFoot"></div>
@@ -388,21 +507,32 @@ label.f textarea{resize:vertical;min-height:84px;line-height:1.5}
 
 <!-- ===== settings modal ===== -->
 <div class="veil" id="setVeil" hidden>
-  <div class="modal" style="width:min(560px,100%)" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(580px,100%)" role="dialog" aria-modal="true">
     <div class="modal-head"><h2>Settings</h2><button class="icon-btn" data-close>✕</button></div>
     <div class="modal-body">
-      <label class="f">Ops access code<input id="sPin" /></label>
-      <label class="f">Demo clock — jump forward to watch bubbles grow
-        <input id="sDays" type="range" min="0" max="60" step="1" />
+      <label class="f">Ops access code (prototype only)<input id="sPin" /></label>
+      <label class="f">Demo clock — move the logical date forward
+        <input id="sDays" type="range" min="0" max="90" step="1" />
       </label>
-      <div class="hint" id="sDaysLabel"></div>
+      <div class="small muted" id="sDaysLabel"></div>
+      <div class="box">
+        <h4>Bubble pressure weighting</h4>
+        <div class="grid2">
+          <label class="f">Support<input id="wSupport" type="number" min="0" max="100" /></label>
+          <label class="f">Severity<input id="wSeverity" type="number" min="0" max="100" /></label>
+          <label class="f">patient impact<input id="wImpact" type="number" min="0" max="100" /></label>
+          <label class="f">Reach (people affected)<input id="wReach" type="number" min="0" max="100" /></label>
+          <label class="f">Age / overdue<input id="wAge" type="number" min="0" max="100" /></label>
+          <label class="f">Total<input id="wTotal" disabled /></label>
+        </div>
+      </div>
       <div class="grid2">
         <button class="btn" id="sExport">Export data (JSON)</button>
         <button class="btn" id="sImport">Import data</button>
       </div>
       <button class="btn ghost" id="sSeed">Reload demo bubbles</button>
-      <button class="btn danger" id="sWipe">Erase everything</button>
-      <p class="hint">Everything lives in this browser only — nothing leaves your machine.</p>
+      <button class="btn danger" id="sWipe">Erase all local data</button>
+      <p class="small muted">Everything is stored in this browser only (localStorage key <code>bubble.store.v2</code>). Nothing leaves your machine.</p>
     </div>
     <div class="modal-foot"><button class="btn primary" data-close>Done</button></div>
   </div>
@@ -410,478 +540,1925 @@ label.f textarea{resize:vertical;min-height:84px;line-height:1.5}
 
 <div class="toast" id="toast"></div>
 <input type="file" id="fileIn" accept="application/json" hidden />
-
 <script>
+/* =========================================================================
+   BUBBLE — single-file prototype
+   Module map (kept deliberately separate so this can be split into files
+   or moved onto a real backend later):
+     Clock       logical/demo time
+     Model       bubble shape, defaults, migration
+     Calc        size, age, lifecycle, bubble pressure, value metrics
+     Similar     lightweight duplicate detection (swappable for embeddings)
+     Validate    form validation rules
+     Storage     persistence boundary  (localStorage today, API later)
+     Auth        identity, role, permissions (PIN today, SSO later)
+     Demo        clearly-labelled fictional seed data
+     UI          everything that touches the DOM
+   ========================================================================= */
 (() => {
 "use strict";
-const KEY = "bubble.store.v1";
+
+/* ===================== small helpers ===================== */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.prototype.slice.call(document.querySelectorAll(s));
 const DAY = 86400000;
-const LIFESPAN = 50;      // customer-facing bubbles expire after this
-const CALM = 30;          // no growth before this day
-const RATE_WORDS = {1:"Mild annoyance",2:"Slows me down",3:"Costs real time every week",4:"Blocks work regularly",5:"Customers feel it now"};
-const $ = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
-const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const uid = () => Math.random().toString(36).slice(2,9);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+  ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const pct = (v, max) => max ? clamp(v / max, 0, 1) : 0;
+const people = n => n + (n === 1 ? " person" : " people");
 
-/* ---------------- state ---------------- */
-let S = load();
-function load(){
-  try{ const r = JSON.parse(localStorage.getItem(KEY)); if(r && r.bubbles) return r; }catch(e){}
-  return { bubbles: seed(), me:"", pin:"1234", offset:0, theme:"deep" };
-}
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Storage is full or blocked."); } }
-const now = () => Date.now() + S.offset*DAY;
+/* ===================== constants ===================== */
+const STORE_KEY  = "bubble.store.v2";
+const LEGACY_KEY = "bubble.store.v1";
 
-/* ---------------- bubble maths ---------------- */
-const ageDays = b => Math.max(0,(now() - b.createdAt)/DAY);
-const backers = b => 1 + (b.backers?b.backers.length:0);
-function pressure(b){                       // 0 → 1 escalation from neglect
-  if(b.type!=="customer") return 0;
-  const d = ageDays(b);
-  if(d <= CALM) return 0;
-  return Math.min(1,(d-CALM)/(LIFESPAN-CALM));
-}
-function state(b){
-  if(b.status==="popped") return "popped";
-  if(b.type==="customer" && ageDays(b) > LIFESPAN) return "expired";
-  return "active";
-}
-function radius(b){
-  const base = 26 + Math.sqrt(backers(b))*17 + b.rating*4.5;
-  return Math.round(base * (1 + pressure(b)*0.85));
-}
-const hue = r => ["","var(--r1)","var(--r2)","var(--r3)","var(--r4)","var(--r5)"][r];
-const hueHex = r => ["","#4fd1a5","#58c7f0","#9b8cff","#ffb25c","#ff6b81"][r];
-const fmtAge = b => { const d=Math.floor(ageDays(b)); return d===0?"today":d===1?"1 day":d+" days"; };
-const fmtDate = t => new Date(t).toLocaleString([], {day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+const LIFECYCLE = { GROW: 31, ESCALATED: 40, MANAGER: 45, BREACH: 50 };
 
-/* ---------------- seed ---------------- */
-function seed(){
-  const ago = d => Date.now() - d*DAY;
-  const mk = o => Object.assign({ id:uid(), backers:[], status:"open", answer:"", type:"internal" }, o);
-  return [
-    mk({ author:"Ananya R", area:"Warehouse dispatch", process:"Nightly stock reconciliation", rating:5, type:"customer",
-      problem:"The scanner drops its connection every time we move past bay 12, so the last 40 minutes of the shift is spent re-keying codes by hand. Two people end up doing one person's job.",
-      solution:"Add a second access point above bay 12. IT quoted one already — it's sitting unapproved.",
-      lostMins:200, spentMins:12, saves:"yes", createdAt:ago(41), backers:["Vikram S","Joel D","Meera P","Sana K","Ravi T"] }),
-    mk({ author:"EMP-2214", area:"Customer support", process:"Refund approval", rating:4, type:"customer",
-      problem:"Refunds above ₹2,000 need two approvals, but the second approver is only online in the morning. Customers wait a full day for a five-minute decision.",
-      solution:"Let the shift lead be the second approver after 2pm.",
-      lostMins:120, spentMins:8, saves:"partly", createdAt:ago(34), backers:["Nikhil A","Farah M","Deepa I"] }),
-    mk({ author:"Joel D", area:"IT helpdesk", process:"New joiner setup", rating:3,
-      problem:"Laptops arrive without the VPN profile, so every new joiner loses their first morning on a ticket we already know is coming.",
-      solution:"Bake the VPN profile into the base image before shipping.",
-      createdAt:ago(18), backers:["Ananya R","Sana K","Priya B","Tom H"] }),
-    mk({ author:"Meera P", area:"Billing", process:"Monthly invoice run", rating:4,
-      problem:"The invoice template pulls the old GST rate for three legacy accounts, so finance corrects them by hand every single month.",
-      solution:"Fix the rate in the template rather than patching the output.",
-      createdAt:ago(9), backers:["Rahul N","Deepa I"] }),
-    mk({ author:"Sana K", area:"Logistics", process:"Route handover", rating:2,
-      problem:"Drivers get the route sheet on paper at 6am, so any change after 5:30am never reaches them.",
-      solution:"Send the sheet to the driver app instead, paper as backup only.",
-      createdAt:ago(5), backers:["Joel D"] }),
-    mk({ author:"Vikram S", area:"Quality", process:"Batch sampling", rating:5,
-      problem:"Sampling frequency is written in two documents that disagree. Auditors have flagged it twice.",
-      solution:"Retire the older SOP and link both teams to one page.",
-      createdAt:ago(23), backers:["Meera P","Ananya R","Tom H","Farah M","Priya B","Rahul N"] }),
-    mk({ author:"Priya B", area:"HR operations", process:"Shift swap requests", rating:2,
-      problem:"Swaps go through email, so there is no record of who approved what when payroll queries it.",
-      solution:"A shared sheet with a timestamp column would be enough.",
-      createdAt:ago(3), backers:[] }),
-    mk({ author:"Tom H", area:"Customer support", process:"Escalation routing", rating:3, type:"customer",
-      problem:"Tier-2 escalations land in a shared mailbox nobody owns overnight, so anything raised after 8pm is picked up the next afternoon.",
-      solution:"Assign an owner per night in the rota, same as the phone line.",
-      lostMins:75, spentMins:6, saves:"yes", createdAt:ago(12), backers:["Nikhil A"] }),
-    mk({ author:"Rahul N", area:"Warehouse dispatch", process:"Pallet labelling", rating:1,
-      problem:"Label printer defaults to the wrong size after every power cut.",
-      solution:"Save the profile as the startup default.",
-      createdAt:ago(2), backers:[] }),
-    mk({ author:"Deepa I", area:"Billing", process:"Credit note issue", rating:3,
-      problem:"Credit notes cannot be issued without a manager PIN, and there is one PIN for four managers.",
-      solution:"Individual PINs so the audit trail means something.",
-      status:"popped", answer:"Individual PINs issued on 12th, old shared PIN retired. Audit log now shows the approver's name on every credit note.",
-      poppedAt: ago(1), poppedBy:"Ops", createdAt:ago(15), backers:["Meera P","Rahul N"] })
-  ];
-}
-
-/* ---------------- shell ---------------- */
-let mode = "user", userTab = "mine", adminView = "field", showArchive = false;
-document.documentElement.dataset.theme = S.theme || "deep";
-
-$("#themeBtn").onclick = () => {
-  S.theme = (S.theme==="deep") ? "milk" : "deep";
-  document.documentElement.dataset.theme = S.theme; save();
-  if(mode==="admin") renderAdmin();
-};
-$("#tabUser").onclick = () => setMode("user");
-$("#tabAdmin").onclick = () => setMode("admin");
-function setMode(m){
-  mode = m;
-  $("#tabUser").setAttribute("aria-pressed", m==="user");
-  $("#tabAdmin").setAttribute("aria-pressed", m==="admin");
-  $("#userView").hidden = m!=="user";
-  $("#adminView").hidden = m!=="admin";
-  $("#fabNew").hidden = m!=="user";
-  m==="user" ? renderUser() : renderAdmin();
-}
-$("#whoChip").onclick = () => {
-  const n = prompt("Who's raising bubbles from this device?", S.me || "");
-  if(n!==null){ S.me = n.trim(); save(); renderWho(); renderUser(); }
-};
-function renderWho(){ $("#whoName").textContent = S.me || "Set your name"; }
-
-/* ---------------- user view ---------------- */
-$("#tabMine").onclick = () => { userTab="mine"; renderUser(); };
-$("#tabAll").onclick  = () => { userTab="all";  renderUser(); };
-$("#tabDone").onclick = () => { userTab="done"; renderUser(); };
-
-function renderUser(){
-  renderWho();
-  $("#tabMine").setAttribute("aria-selected", userTab==="mine");
-  $("#tabAll").setAttribute("aria-selected", userTab==="all");
-  $("#tabDone").setAttribute("aria-selected", userTab==="done");
-
-  const open = S.bubbles.filter(b => state(b)==="active");
-  const mine = S.bubbles.filter(b => b.author === S.me);
-  const popped = S.bubbles.filter(b => b.status==="popped");
-  const answeredPct = S.bubbles.length ? Math.round(popped.length/S.bubbles.length*100) : 0;
-  $("#userStats").innerHTML = [
-    ["Floating now", open.length],
-    ["Popped by ops", popped.length],
-    ["Yours", mine.length],
-    ["Answered", answeredPct + "%"]
-  ].map(([l,n]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
-
-  let list;
-  if(userTab==="mine") list = mine.filter(b => b.status!=="popped");
-  else if(userTab==="all") list = S.bubbles.filter(b => state(b)==="active");
-  else list = S.bubbles.filter(b => state(b)!=="active");
-  list = list.slice().sort((a,b) => radius(b)-radius(a));
-
-  const wrap = $("#userCards");
-  if(!list.length){
-    wrap.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>${
-      userTab==="mine" ? (S.me ? "You haven't raised anything yet" : "Tell us who you are first")
-      : userTab==="done" ? "Nothing has been popped yet" : "The field is clear"}</b>${
-      userTab==="mine" ? "Raise a bubble and your colleagues can back it." : "Popped bubbles keep their answer here so you can circle back."}</div>`;
-    return;
-  }
-  wrap.innerHTML = list.map(b => {
-    const st = state(b), p = pressure(b);
-    const tag = st==="popped" ? `<span class="pill live"><span class="dot" style="background:var(--ok)"></span>Popped</span>`
-      : st==="expired" ? `<span class="pill hot"><span class="dot" style="background:var(--hot)"></span>Expired unanswered</span>`
-      : p>0 ? `<span class="pill ${p>.6?"hot":"warm"}"><span class="dot" style="background:${p>.6?"var(--hot)":"var(--warn)"}"></span>Growing · day ${Math.floor(ageDays(b))} of ${LIFESPAN}</span>`
-      : `<span class="pill live"><span class="dot" style="background:${hue(b.rating)}"></span>Severity ${b.rating}</span>`;
-    const backed = (b.backers||[]).includes(S.me);
-    const canBack = st==="active" && S.me && b.author!==S.me;
-    return `<article class="card" data-id="${b.id}">
-      <div class="area">${esc(b.area)} · ${esc(b.process)}</div>
-      <h3>${esc(b.problem.slice(0,96))}${b.problem.length>96?"…":""}</h3>
-      <div class="sol">${st==="popped" ? "Answer: "+esc(b.answer.slice(0,110)) : esc(b.solution.slice(0,110))}${(st==="popped"?b.answer:b.solution).length>110?"…":""}</div>
-      <div class="foot">
-        ${tag}
-        <span class="backers">${backers(b)} backing</span>
-        <span class="spacer"></span>
-        ${canBack ? `<button class="btn sm ${backed?"ghost":""}" data-back="${b.id}">${backed?"Backed ✓":"Back this"}</button>`
-                  : `<button class="btn sm ghost" data-open="${b.id}">Open</button>`}
-      </div>
-    </article>`;
-  }).join("");
-}
-
-$("#userCards").addEventListener("click", e => {
-  const back = e.target.closest("[data-back]");
-  if(back){
-    const b = S.bubbles.find(x => x.id===back.dataset.back);
-    b.backers = b.backers || [];
-    const i = b.backers.indexOf(S.me);
-    if(i>-1){ b.backers.splice(i,1); toast("Backing removed."); }
-    else { b.backers.push(S.me); toast("Backed — the bubble just grew."); }
-    save(); renderUser(); return;
-  }
-  const card = e.target.closest("[data-id]");
-  if(card) openDetail(card.dataset.id);
-});
-
-/* ---------------- raise form ---------------- */
-let fType = "internal", fRate = 3;
-const openForm = () => {
-  $("#iName").value = S.me || "";
-  ["iArea","iProcess","iProblem","iSolution","iLost","iSpent"].forEach(id => $("#"+id).value = "");
-  setType("internal"); setRate(3);
-  $("#areaList").innerHTML = [...new Set(S.bubbles.map(b=>b.area))].map(a=>`<option value="${esc(a)}">`).join("");
-  show("#formVeil"); $("#iName").focus();
-};
-$("#newBubbleBtn").onclick = openForm;
-$("#fabNew").onclick = openForm;
-$("#typeRow").onclick = e => { const b = e.target.closest("[data-type]"); if(b) setType(b.dataset.type); };
-function setType(t){
-  fType = t;
-  $$("#typeRow button").forEach(b => b.setAttribute("aria-pressed", b.dataset.type===t));
-  $("#timeBox").hidden = t!=="customer";
-}
-$("#rateRow").onclick = e => { const b = e.target.closest("[data-v]"); if(b) setRate(+b.dataset.v); };
-function setRate(v){
-  fRate = v;
-  $$("#rateRow button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.v===v));
-  $("#rateLegend").textContent = v + " — " + RATE_WORDS[v];
-}
-$("#submitBubble").onclick = () => {
-  const name = $("#iName").value.trim(), area = $("#iArea").value.trim(), process = $("#iProcess").value.trim();
-  const problem = $("#iProblem").value.trim(), solution = $("#iSolution").value.trim();
-  if(!name || !area || !process || !problem){ toast("Name, area, process and problem are needed."); return; }
-  S.me = name;
-  S.bubbles.unshift({
-    id:uid(), author:name, area, process, problem, solution: solution || "No fix suggested yet.",
-    rating:fRate, type:fType, status:"open", backers:[], answer:"", createdAt:Date.now(),
-    lostMins: fType==="customer" ? (+$("#iLost").value||0) : null,
-    spentMins: fType==="customer" ? (+$("#iSpent").value||0) : null,
-    saves: fType==="customer" ? $("#iSaves").value : null
-  });
-  save(); hide("#formVeil"); userTab="mine"; renderUser();
-  toast("Your bubble is floating. Ops can see it now.");
+const SEVERITY = {
+  1: { label: "Low",         color: "#4fd1a5" },
+  2: { label: "Moderate",    color: "#58c7f0" },
+  3: { label: "Significant", color: "#9b8cff" },
+  4: { label: "High",        color: "#ffb25c" },
+  5: { label: "Critical",    color: "#ff6b81" }
 };
 
-/* ---------------- admin ---------------- */
-let unlocked = false;
-$("#pinBtn").onclick = tryPin;
-$("#pin").addEventListener("keydown", e => { if(e.key==="Enter") tryPin(); });
-function tryPin(){
-  if($("#pin").value === S.pin){ unlocked = true; $("#pin").value=""; renderAdmin(); }
-  else { toast("That code doesn't match. Try 1234."); $("#pin").select(); }
-}
-$("#viewField").onclick = () => { adminView="field"; renderAdmin(); };
-$("#viewList").onclick  = () => { adminView="list";  renderAdmin(); };
-$("#archiveBtn").onclick = () => { showArchive = !showArchive; renderAdmin(); };
-["fArea","fType","fSort","fSearch"].forEach(id => $("#"+id).addEventListener("input", renderAdmin));
+const STATUS = {
+  new:               { label: "New",               group: "open",   tone: "" },
+  acknowledged:      { label: "Acknowledged",      group: "open",   tone: "" },
+  under_review:      { label: "Under review",      group: "open",   tone: "" },
+  planned:           { label: "Planned",           group: "open",   tone: "" },
+  in_progress:       { label: "In progress",       group: "open",   tone: "warn" },
+  awaiting_decision: { label: "Awaiting decision", group: "open",   tone: "warn" },
+  resolved:          { label: "Resolved",          group: "closed", tone: "ok" },
+  closed:            { label: "Closed",            group: "closed", tone: "ok" },
+  declined:          { label: "Declined",          group: "closed", tone: "" },
+  duplicate:         { label: "Duplicate",         group: "closed", tone: "" },
+  withdrawn:         { label: "Withdrawn",         group: "closed", tone: "" },
+  deletion_requested:{ label: "Removal requested", group: "open",   tone: "hot" }
+};
+const OPEN_STATUSES = Object.keys(STATUS).filter(k => STATUS[k].group === "open");
 
-function adminList(){
-  const q = $("#fSearch").value.toLowerCase().trim();
-  let list = S.bubbles.filter(b => showArchive ? state(b)!=="active" : state(b)==="active");
-  const a = $("#fArea").value, t = $("#fType").value;
-  if(a) list = list.filter(b => b.area===a);
-  if(t) list = list.filter(b => b.type===t);
-  if(q) list = list.filter(b => (b.problem+b.solution+b.area+b.process+b.author).toLowerCase().includes(q));
-  const s = $("#fSort").value;
-  const cmp = {
-    size: (x,y) => radius(y)-radius(x),
-    rating: (x,y) => y.rating-x.rating || radius(y)-radius(x),
-    area: (x,y) => x.area.localeCompare(y.area) || radius(y)-radius(x),
-    age: (x,y) => x.createdAt-y.createdAt,
-    backers: (x,y) => backers(y)-backers(x)
-  }[s];
-  return list.sort(cmp);
-}
+const OUTCOMES = {
+  implemented:   "Implemented",
+  in_progress:   "In progress",
+  workaround:    "Workaround provided",
+  declined:      "Declined",
+  duplicate:     "Duplicate",
+  escalated:     "Escalated",
+  investigating: "Needs further investigation"
+};
 
-function renderAdmin(){
-  $("#gate").hidden = unlocked;
-  $("#adminBoard").hidden = !unlocked;
-  if(!unlocked){ $("#pin").focus(); return; }
+const SUPPORT_REASONS = {
+  affects_me:       "This affects me too",
+  see_regularly:    "I see this regularly",
+  affects_patients:"This affects patients",
+  extra_work:       "This creates unnecessary work",
+  agree_fix:        "I agree with the suggested fix",
+  other:            "Other"
+};
 
-  const areas = [...new Set(S.bubbles.map(b=>b.area))].sort();
-  const sel = $("#fArea"), keep = sel.value;
-  sel.innerHTML = `<option value="">All areas</option>` + areas.map(a=>`<option${a===keep?" selected":""}>${esc(a)}</option>`).join("");
-  $("#archiveBtn").textContent = showArchive ? "← Active bubbles" : "Archive";
-  $("#viewField").setAttribute("aria-pressed", adminView==="field");
-  $("#viewList").setAttribute("aria-pressed", adminView==="list");
-  $("#field").hidden = adminView!=="field";
-  $("#listWrap").hidden = adminView!=="list";
-  adminView==="field" ? renderField() : renderTable();
-}
+const DELETE_REASONS = {
+  solved:       "Solved already",
+  not_required: "Not required at this point in time",
+  manager:      "Manager requested removal",
+  other:        "Other"
+};
 
-/* --- packing: biggest in the centre, smaller radiating outward --- */
-function packed(items){
-  const placed = [];
-  items.forEach((it, i) => {
-    if(i===0){ it.x=0; it.y=0; placed.push(it); return; }
-    const gap = 7;
-    outer:
-    for(let rad = it.r; rad < 5000; rad += 7){
-      const steps = Math.max(14, Math.round(2*Math.PI*rad / Math.max(16, it.r*0.75)));
-      const spin = rad * 0.11;
-      for(let s=0; s<steps; s++){
-        const ang = spin + (s/steps)*Math.PI*2;
-        const x = Math.cos(ang)*rad*1.12, y = Math.sin(ang)*rad*0.86;
-        let ok = true;
-        for(const p of placed){
-          const dx=p.x-x, dy=p.y-y;
-          if(dx*dx+dy*dy < (p.r+it.r+gap)**2){ ok=false; break; }
-        }
-        if(ok){ it.x=x; it.y=y; placed.push(it); break outer; }
+const ACTION_LABEL = {
+  created: "Bubble raised",
+  edited: "Details updated",
+  supported: "Supported",
+  support_removed: "Support withdrawn",
+  ops_comment: "Ops replied",
+  status_changed: "Status changed",
+  owner_changed: "Owner changed",
+  target_changed: "Target date changed",
+  severity_changed: "Severity changed",
+  deletion_requested: "Removal requested by creator",
+  deletion_approved: "Removal approved by ops",
+  deletion_rejected: "Removal rejected by ops",
+  resolved: "Resolved / popped",
+  reopened: "Reopened"
+};
+
+const OWNER_OPTIONS = ["", "Operations", "Service Desk", "Booking Operations", "Technology", "Facilities", "People Team", "Quality"];
+
+const DEFAULT_WEIGHTS = { support: 30, severity: 25, impact: 20, reach: 10, age: 15 };
+
+const FREQUENCIES = [
+  { v: 1,  label: "About once a week" },
+  { v: 3,  label: "A few times a week" },
+  { v: 15, label: "Several times a day" },
+  { v: 50, label: "On most interactions" }
+];
+
+/* ===================== Clock ===================== */
+const Clock = {
+  offset: 0,                                  // demo days, injected by Storage on load
+  now(){ return Date.now() + this.offset * DAY; },
+  iso(ts){ return new Date(ts).toISOString(); },
+  fmt(ts){
+    if(!ts) return "—";
+    return new Date(ts).toLocaleString([], { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+  },
+  fmtDate(ts){
+    if(!ts) return "—";
+    return new Date(ts).toLocaleDateString([], { day:"2-digit", month:"short", year:"numeric" });
+  },
+  dateInput(ts){ return ts ? new Date(ts).toISOString().slice(0,10) : ""; }
+};
+
+/* ===================== Model ===================== */
+const Model = {
+  blankpatientImpact(){
+    return { frequency: 0, timePerOccurrence: 0, peopleAffected: 0, estimatedWeeklyImpact: 0, expectedWeeklySaving: 0, preventsErrors: "no" };
+  },
+
+  /* Fills in every field the UI expects. Used for new bubbles, imports and
+     anything loaded from an older store — so old data never crashes the app. */
+  normalize(raw, index){
+    const b = Object.assign({}, raw || {});
+    b.id        = b.id || uid();
+    b.ref       = b.ref || ("#" + (1000 + (index == null ? Math.floor(Math.random()*900) : index)));
+    b.creator   = b.creator || b.author || "Unknown";
+    b.creatorId = b.creatorId || b.creator;
+    b.privacy   = b.privacy || "named";
+    b.unit      = b.unit || "Group-wide";
+    b.area      = b.area || "General";
+    b.process   = b.process || "—";
+    b.problem   = b.problem || "";
+    b.solution  = b.solution || "";
+    b.severity  = clamp(parseInt(b.severity || b.rating || 3, 10), 1, 5);
+    b.type      = (b.type === "patient") ? "patient" : "internal";
+    b.isDemo    = !!b.isDemo;
+
+    const ci = Object.assign(Model.blankpatientImpact(), b.patientImpact || {});
+    if(!ci.estimatedWeeklyImpact && raw && raw.lostMins) ci.estimatedWeeklyImpact = num(raw.lostMins);   // v1 field
+    if(!ci.estimatedWeeklyImpact) ci.estimatedWeeklyImpact = num(ci.frequency) * num(ci.timePerOccurrence);
+    if(!ci.preventsErrors && raw && raw.saves) ci.preventsErrors = raw.saves;
+    b.patientImpact = ci;
+
+    b.supporters = (b.supporters || b.backers || []).map(s =>
+      typeof s === "string" ? { user: s, reason: "affects_me", comment: "", at: b.createdAt || Date.now() } : s);
+
+    b.owner      = b.owner || "";
+    b.targetDate = b.targetDate || null;
+    b.createdAt  = b.createdAt || Date.now();
+    b.updatedAt  = b.updatedAt || b.createdAt;
+
+    b.lifecycle = b.lifecycle || {
+      startsGrowingAt: b.createdAt + LIFECYCLE.GROW * DAY,
+      escalationAt:    b.createdAt + LIFECYCLE.ESCALATED * DAY,
+      managerAt:       b.createdAt + LIFECYCLE.MANAGER * DAY,
+      overdueAt:       b.createdAt + LIFECYCLE.BREACH * DAY
+    };
+
+    b.resolution = Object.assign({
+      outcome: "", response: "", expectedBenefit: "", actualBenefit: "",
+      effortHours: null, patientsBefore: null, patientsAfter: null,
+      resolvedAt: null, resolvedBy: "", popped: false
+    }, b.resolution || {});
+
+    b.deletion = Object.assign({
+      requested: false, reason: "", description: "", requestedAt: null, requestedBy: "",
+      approvedAt: null, approvedBy: null, rejectedAt: null, rejectedBy: null
+    }, b.deletion || {});
+
+    b.meta = Object.assign({ formSeconds: 0, source: "user" }, b.meta || {});
+
+    /* ---- status: derive for legacy records ---- */
+    if(!b.status || !STATUS[b.status]){
+      if(raw && raw.status === "popped"){
+        b.status = "resolved";
+        b.resolution.popped = true;
+        b.resolution.response = b.resolution.response || raw.answer || "";
+        b.resolution.outcome  = b.resolution.outcome || "implemented";
+        b.resolution.resolvedAt = b.resolution.resolvedAt || raw.poppedAt || b.updatedAt;
+        b.resolution.resolvedBy = b.resolution.resolvedBy || raw.poppedBy || "Ops";
+      } else {
+        b.status = "new";
       }
     }
-    if(it.x===undefined){ it.x=0; it.y=0; placed.push(it); }
-  });
-  return placed;
-}
+    if(b.deletion.requested && b.status !== "withdrawn") b.status = "deletion_requested";
 
-function renderField(){
-  const host = $("#field");
-  const list = adminList().slice().sort((a,b) => radius(b)-radius(a));
-  host.innerHTML = `<div class="field-note" id="fieldNote"></div>`;
-  if(!list.length){
-    host.innerHTML += `<div class="empty" style="position:absolute;inset:26px;display:grid;align-content:center;border:0"><b>${showArchive?"Nothing archived yet":"No bubbles match that filter"}</b>${showArchive?"Popped and expired bubbles collect here.":"Clear the filters to see the whole field."}</div>`;
-    return;
+    b.activity = (b.activity || []).slice();
+    if(!b.activity.length){
+      b.activity.push({ at: b.createdAt, actor: b.creator, role: "employee", action: "created" });
+      (b.supporters || []).forEach(s => b.activity.push({ at: s.at || b.createdAt, actor: s.user, role: "employee", action: "supported", note: SUPPORT_REASONS[s.reason] || "" }));
+      if(b.resolution.resolvedAt) b.activity.push({ at: b.resolution.resolvedAt, actor: b.resolution.resolvedBy || "Ops", role: "ops", action: "resolved", note: b.resolution.response });
+      b.activity.sort((x, y) => x.at - y.at);
+    }
+    return b;
+  },
+
+  create(input, actor, at){
+    const b = Model.normalize({
+      id: uid(),
+      creator: actor.name,
+      creatorId: actor.name,
+      privacy: input.privacy,
+      unit: input.unit, area: input.area, process: input.process,
+      problem: input.problem, solution: input.solution,
+      severity: input.severity, type: input.type,
+      patientImpact: input.patientImpact,
+      status: "new",
+      createdAt: at, updatedAt: at,
+      lifecycle: {
+        startsGrowingAt: at + LIFECYCLE.GROW * DAY,
+        escalationAt:    at + LIFECYCLE.ESCALATED * DAY,
+        managerAt:       at + LIFECYCLE.MANAGER * DAY,
+        overdueAt:       at + LIFECYCLE.BREACH * DAY
+      },
+      meta: { formSeconds: input.formSeconds || 0, source: "user" },
+      activity: [{ at: at, actor: actor.name, role: actor.role, action: "created" }]
+    });
+    b.ref = "#" + Math.floor(1000 + Math.random() * 8999);
+    return b;
+  },
+
+  /* Fields a creator may edit, with human labels for the audit trail. */
+  EDITABLE: {
+    area: "Area of work", process: "Process", problem: "Problem",
+    solution: "Suggested solution", severity: "Severity", privacy: "Visibility",
+    "patientImpact.frequency": "Frequency (per week)",
+    "patientImpact.timePerOccurrence": "Time per occurrence (min)",
+    "patientImpact.peopleAffected": "patients affected per week",
+    "patientImpact.expectedWeeklySaving": "Expected weekly saving (min)",
+    "patientImpact.preventsErrors": "Prevents errors / risk"
+  },
+  get(b, path){
+    return path.split(".").reduce((o, k) => (o == null ? o : o[k]), b);
+  },
+  set(b, path, value){
+    const parts = path.split(".");
+    const last = parts.pop();
+    const host = parts.reduce((o, k) => o[k], b);
+    host[last] = value;
   }
-  const items = packed(list.map(b => ({ b, r: radius(b) })));
-  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
-  items.forEach(i => { minX=Math.min(minX,i.x-i.r); maxX=Math.max(maxX,i.x+i.r); minY=Math.min(minY,i.y-i.r); maxY=Math.max(maxY,i.y+i.r); });
-  const w = maxX-minX, h = maxY-minY;
-  const cw = host.clientWidth-28, ch = host.clientHeight-28;
-  const scale = Math.min(1.25, cw/w, ch/h);
-  const offX = (cw - w*scale)/2 + 14 - minX*scale;
-  const offY = (ch - h*scale)/2 + 14 - minY*scale;
+};
 
-  items.forEach((it, i) => {
-    const b = it.b, d = it.r*2*scale, p = pressure(b), c = hueHex(b.rating);
-    const el = document.createElement("button");
-    el.className = "bub" + (d<74 ? " tiny" : "");
-    el.style.cssText = `width:${d}px;height:${d}px;left:${offX+it.x*scale-it.r*scale}px;top:${offY+it.y*scale-it.r*scale}px;
-      background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.92) 0 5%, ${c}dd 24%, ${c}77 62%, ${c}33 100%);
-      box-shadow:inset 0 -10px 24px ${c}55, 0 10px 30px ${c}33${p>.5?`, 0 0 0 ${2+p*4}px ${c}22`:""};
-      animation-delay:${(i%7)*0.6}s; font-size:${Math.max(10,Math.min(17,d/9))}px`;
-    el.dataset.id = b.id;
-    el.innerHTML = `<div class="b-area">${esc(b.area)}</div><div class="b-meta">${backers(b)} backing · sev ${b.rating}${p>0?` · day ${Math.floor(ageDays(b))}`:""}</div>`;
-    el.title = b.problem;
-    el.onclick = () => openDetail(b.id);
-    host.appendChild(el);
-  });
-  const growing = list.filter(b => pressure(b)>0).length;
-  $("#fieldNote").textContent = `${list.length} bubble${list.length>1?"s":""} in the field${growing?` · ${growing} growing from neglect`:""} · biggest sits in the centre`;
-}
+/* ===================== Calc ===================== */
+const Calc = {
+  supportCount: b => 1 + (b.supporters ? b.supporters.length : 0),
+  ageDays: b => Math.max(0, (Clock.now() - b.createdAt) / DAY),
+  isClosed: b => STATUS[b.status] && STATUS[b.status].group === "closed",
 
-function renderTable(){
-  const list = adminList();
-  const max = Math.max(...list.map(radius), 1);
-  $("#listBody").innerHTML = list.length ? list.map((b,i) => {
-    const st = state(b), p = pressure(b);
-    return `<tr data-id="${b.id}">
-      <td class="rank">${i+1}</td>
-      <td><div style="font-weight:600;max-width:46ch">${esc(b.problem.slice(0,90))}${b.problem.length>90?"…":""}</div>
-          <div style="color:var(--mist);font-size:12px;margin-top:3px">${esc(b.process)} · ${esc(b.author)}${st==="popped"?" · popped":st==="expired"?" · expired unanswered":""}</div></td>
-      <td>${esc(b.area)}</td>
-      <td><span class="pill"><span class="dot" style="background:${hue(b.rating)}"></span>${b.rating}</span></td>
-      <td>${backers(b)}</td>
-      <td>${fmtAge(b)}${b.type==="customer"?` <span style="color:var(--mist)">/ ${LIFESPAN}</span>`:""}</td>
-      <td><div class="sizebar" style="width:${Math.round(radius(b)/max*100)}%"></div>
-          <div style="font-size:11px;color:var(--mist);margin-top:4px">${p>0?Math.round(p*100)+"% escalated":"steady"}</div></td>
-    </tr>`;
-  }).join("") : `<tr><td colspan="7" style="padding:38px;text-align:center;color:var(--mist)">Nothing here. Clear the filters or switch out of the archive.</td></tr>`;
-}
-$("#listBody").addEventListener("click", e => {
-  const tr = e.target.closest("tr[data-id]"); if(tr) openDetail(tr.dataset.id);
-});
+  weeklyMinutes(b){
+    if(b.type !== "patient") return 0;
+    const ci = b.patientImpact;
+    return num(ci.estimatedWeeklyImpact) || (num(ci.frequency) * num(ci.timePerOccurrence));
+  },
 
-/* ---------------- detail + pop ---------------- */
-let openId = null;
-function openDetail(id){
-  const b = S.bubbles.find(x => x.id===id); if(!b) return;
-  openId = id;
-  const st = state(b), p = pressure(b), isAdmin = mode==="admin" && unlocked;
-  $("#dTitle").textContent = b.area + " — " + b.process;
+  /* Lifecycle stage. patient-facing bubbles escalate on the clock; internal
+     bubbles escalate only against an ops target date. Nothing expires. */
+  stage(b){
+    if(Calc.isClosed(b)) return { key: "closed", label: STATUS[b.status].label, tone: STATUS[b.status].tone || "ok", pressure: 0 };
+    const d = Calc.ageDays(b);
+    if(b.type !== "patient"){
+      const over = b.targetDate && Clock.now() > b.targetDate;
+      return over
+        ? { key: "overdue", label: "Past target date", tone: "hot", pressure: 0.6 }
+        : { key: "normal", label: "Active", tone: "", pressure: 0 };
+    }
+    if(d < LIFECYCLE.GROW)       return { key: "normal",    label: "Within response window", tone: "",     pressure: 0 };
+    if(d < LIFECYCLE.ESCALATED)  return { key: "growing",   label: "Growing — unanswered",    tone: "warn", pressure: 0.25 + (d - LIFECYCLE.GROW) / (LIFECYCLE.ESCALATED - LIFECYCLE.GROW) * 0.2 };
+    if(d < LIFECYCLE.MANAGER)    return { key: "escalated", label: "Escalated",               tone: "warn", pressure: 0.45 + (d - LIFECYCLE.ESCALATED) / (LIFECYCLE.MANAGER - LIFECYCLE.ESCALATED) * 0.2 };
+    if(d < LIFECYCLE.BREACH)     return { key: "manager",   label: "Manager attention required", tone: "hot", pressure: 0.65 + (d - LIFECYCLE.MANAGER) / (LIFECYCLE.BREACH - LIFECYCLE.MANAGER) * 0.15 };
+    return { key: "breached", label: "SLA breached — overdue", tone: "hot", pressure: clamp(0.8 + (d - LIFECYCLE.BREACH) / 60 * 0.2, 0.8, 1) };
+  },
 
-  const time = b.type==="customer" ? `
-    <div class="detail-grid">
-      <div class="dg"><div class="k">Time lost each week</div><div class="v">${b.lostMins||0} min</div></div>
-      <div class="dg"><div class="k">Time spent raising this</div><div class="v">${b.spentMins||0} min</div></div>
-      <div class="dg"><div class="k">Fix wins time back</div><div class="v">${({yes:"Yes",partly:"Partly",no:"Prevents errors"})[b.saves]||"—"}</div></div>
-      <div class="dg"><div class="k">Payback</div><div class="v">${b.lostMins&&b.spentMins?Math.round(b.lostMins/Math.max(1,b.spentMins))+"× in week one":"—"}</div></div>
-    </div>` : "";
+  /* SIZE = collective support only. Colour = severity. Glow = age pressure. */
+  radius(b){
+    return clamp(Math.round(28 + Math.sqrt(Calc.supportCount(b)) * 19), 30, 128);
+  },
 
-  const life = b.type==="customer" ? `
-    <div class="block">
-      <div class="k">Lifecycle — customer-facing bubbles live ${LIFESPAN} days and start growing on day ${CALM+1}</div>
-      <p style="font-size:13.5px">Day ${Math.floor(ageDays(b))} of ${LIFESPAN}. ${
-        st==="expired" ? "Expired with no action taken — kept on record."
-        : p===0 ? `Steady for another ${Math.ceil(CALM-ageDays(b))} days.`
-        : `Escalated ${Math.round(p*100)}% — it reaches full size on day ${LIFESPAN}.`}</p>
-      <div class="growth"><i style="width:${Math.round(Math.min(1,ageDays(b)/LIFESPAN)*100)}%"></i></div>
-    </div>` : "";
+  /* Bubble pressure, 0–100, with every factor exposed to the admin. */
+  pressure(b, weights){
+    const w = weights || DEFAULT_WEIGHTS;
+    const support  = pct(Calc.supportCount(b), 15);
+    const severity = pct(b.severity, 5);
+    const impact   = b.type === "patient" ? pct(Calc.weeklyMinutes(b), 300) : 0;
+    const reach    = b.type === "patient" ? pct(num(b.patientImpact.peopleAffected), 200) : 0;
+    const age      = Calc.stage(b).pressure;
+    const factors = [
+      { key: "support",  label: "Collective support", ratio: support,  points: support  * w.support,  max: w.support,  detail: people(Calc.supportCount(b)) },
+      { key: "severity", label: "Severity",           ratio: severity, points: severity * w.severity, max: w.severity, detail: b.severity + " / 5 — " + SEVERITY[b.severity].label },
+      { key: "impact",   label: "patient impact",    ratio: impact,   points: impact   * w.impact,   max: w.impact,   detail: b.type === "patient" ? Math.round(Calc.weeklyMinutes(b)) + " min/week" : "not patient-facing" },
+      { key: "reach",    label: "Reach",              ratio: reach,    points: reach    * w.reach,    max: w.reach,    detail: b.type === "patient" ? (num(b.patientImpact.peopleAffected) || 0) + " patients/week" : "not patient-facing" },
+      { key: "age",      label: "Age / overdue",      ratio: age,      points: age      * w.age,      max: w.age,      detail: Math.floor(Calc.ageDays(b)) + " days — " + Calc.stage(b).label }
+    ];
+    const score = Math.round(factors.reduce((s, f) => s + f.points, 0));
+    return { score: clamp(score, 0, 100), factors: factors };
+  },
 
-  $("#dBody").innerHTML = `
-    <div class="detail-grid">
-      <div class="dg"><div class="k">Raised by</div><div class="v">${esc(b.author)}</div></div>
-      <div class="dg"><div class="k">Severity</div><div class="v"><span class="pill"><span class="dot" style="background:${hue(b.rating)}"></span>${b.rating} — ${RATE_WORDS[b.rating]}</span></div></div>
-      <div class="dg"><div class="k">Backed by</div><div class="v">${backers(b)} people</div></div>
-      <div class="dg"><div class="k">Raised on</div><div class="v" style="font-size:12.5px">${fmtDate(b.createdAt)}</div></div>
-    </div>
-    ${time}
-    <div class="block"><div class="k">The problem</div><p>${esc(b.problem)}</p></div>
-    <div class="block"><div class="k">Suggested fix</div><p>${esc(b.solution)}</p></div>
-    ${(b.backers&&b.backers.length)?`<div class="block"><div class="k">Also backed by</div><p style="font-size:13.5px">${b.backers.map(esc).join(", ")}</p></div>`:""}
-    ${life}
-    ${st==="popped" ? `<div class="block answer-live"><div class="k">Popped ${b.poppedAt?fmtDate(b.poppedAt):""}</div><p>${esc(b.answer)}</p></div>`
-      : isAdmin ? `<label class="f">Your answer — what was decided or done?
-          <textarea id="dAnswer" placeholder="A bubble can only be popped with an answer attached. This is the record everyone circles back to."></textarea></label>` : ""}`;
+  /* Named "recovery ratio", NOT payback: weekly minutes lost vs the minutes
+     it cost to report the problem. Payback proper needs fix effort (below). */
+  recoveryRatio(b){
+    const spent = (b.meta.formSeconds || 0) / 60;
+    const lost  = Calc.weeklyMinutes(b);
+    if(!lost || spent <= 0) return null;
+    return Math.round(lost / spent);
+  },
+  paybackWeeks(b){
+    const effortMin = num(b.resolution.effortHours) * 60;
+    const saving    = num(b.patientImpact.expectedWeeklySaving) || Calc.weeklyMinutes(b);
+    if(!effortMin || !saving) return null;
+    return Math.round((effortMin / saving) * 10) / 10;
+  },
+  responseHours(b){
+    const first = (b.activity || []).find(a => a.action === "ops_comment" || a.action === "status_changed");
+    return first ? (first.at - b.createdAt) / 3600000 : null;
+  },
+  resolutionDays(b){
+    return b.resolution.resolvedAt ? (b.resolution.resolvedAt - b.createdAt) / DAY : null;
+  }
+};
 
-  const foot = $("#dFoot");
-  if(st!=="popped" && isAdmin){
-    foot.innerHTML = `<button class="btn ghost" data-close>Close</button><button class="btn primary" id="popBtn" disabled>Pop this bubble</button>`;
-    const ta = $("#dAnswer"), pop = $("#popBtn");
-    ta.addEventListener("input", () => pop.disabled = ta.value.trim().length < 10);
-    pop.onclick = () => popBubble(b.id, ta.value.trim());
-  } else if(st!=="popped" && mode==="user" && S.me && b.author!==S.me){
-    const backed = (b.backers||[]).includes(S.me);
-    foot.innerHTML = `<button class="btn ghost" data-close>Close</button><button class="btn ${backed?"":"primary"}" id="backBtn">${backed?"Remove my backing":"Back this bubble"}</button>`;
-    $("#backBtn").onclick = () => {
-      const i = b.backers.indexOf(S.me);
-      i>-1 ? b.backers.splice(i,1) : b.backers.push(S.me);
-      save(); hide("#detailVeil"); renderUser(); toast(i>-1?"Backing removed.":"Backed — the bubble just grew.");
+/* ===================== Similar (duplicate detection) =====================
+   Deliberately isolated: swap this one function for an embedding / vector
+   lookup later and nothing else in the app has to change. */
+const Similar = {
+  STOP: new Set("the a an an and or of to in on for is are be it this that we our i you they them with at by from as not no if then than so too very can cannot could would should will do does did have has had when while about into onto over under after before more most some any each every there here what which who how need needs".split(" ")),
+  stem(t){ return t.length > 4 && t.slice(-1) === "s" ? t.slice(0, -1) : t; },   // crude plural strip
+  tokens(text){
+    const out = new Set();
+    String(text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
+      .forEach(t => { if(t.length > 2 && !Similar.STOP.has(t)) out.add(Similar.stem(t)); });
+    return out;
+  },
+  /* Overlap coefficient rather than Jaccard, so a two-line draft can still match
+     a long existing write-up. Same-process/same-area gives a small boost. */
+  score(draft, existing){
+    const A = Similar.tokens([draft.problem, draft.solution].join(" "));
+    const B = Similar.tokens([existing.problem, existing.solution].join(" "));
+    if(A.size < 3 || B.size < 3) return 0;
+    let inter = 0;
+    A.forEach(t => { if(B.has(t)) inter++; });
+    if(inter < 3) return 0;                       // a couple of shared words is not a duplicate
+    let score = inter / Math.min(A.size, B.size);
+    const same = (x, y) => x && y && String(x).trim().toLowerCase() === String(y).trim().toLowerCase();
+    if(same(draft.process, existing.process)) score += 0.12;
+    return Math.min(1, score);
+  },
+  find(draft, bubbles, limit){
+    return bubbles
+      .filter(b => !Calc.isClosed(b))
+      .map(b => ({ bubble: b, score: Similar.score(draft, b) }))
+      .filter(x => x.score >= 0.45)
+      .sort((x, y) => y.score - x.score)
+      .slice(0, limit || 3);
+  }
+};
+
+/* ===================== Validate ===================== */
+const Validate = {
+  bubble(input){
+    const e = [];
+    if(!input.name || input.name.trim().length < 2)       e.push("Add your name or employee ID.");
+    if(!input.unit)                                       e.push("Choose your unit.");
+    if(!input.area || input.area.trim().length < 2)       e.push("Add the area of work.");
+    if(!input.process || input.process.trim().length < 2) e.push("Add the process affected.");
+    if(!input.problem || input.problem.trim().length < 12) e.push("Describe the problem in a little more detail (at least 12 characters).");
+    if(!(input.severity >= 1 && input.severity <= 5))     e.push("Choose a severity between 1 and 5.");
+    if(input.type === "patient"){
+      const ci = input.patientImpact;
+      if(!num(ci.timePerOccurrence) && !num(ci.estimatedWeeklyImpact))
+        e.push("For a patient-facing bubble, add roughly how much time each occurrence costs.");
+    }
+    return e;
+  },
+  words(text){ return String(text || "").trim().split(/\s+/).filter(w => w.replace(/[^a-z0-9]/gi, "").length > 1); },
+  deletion(reason, description){
+    const e = [];
+    if(!reason) e.push("Choose a reason.");
+    if(reason === "other" && Validate.words(description).length < 2)
+      e.push("Please describe the reason in at least two words.");
+    return e;
+  },
+  opsResolution(fields){
+    const e = [];
+    if(!fields.outcome) e.push("Choose an outcome.");
+    if(!fields.response || fields.response.trim().length < 10)
+      e.push("Write a response — a bubble cannot be popped without one.");
+    return e;
+  }
+};
+/* ===================== Demo data =========================================
+   FICTIONAL DEMONSTRATION DATA ONLY.
+   Every person, unit and scenario below is invented for the prototype demo.
+   It is loaded only when the browser has no saved data, or when "Reload demo
+   bubbles" is pressed. Each record carries isDemo:true and is badged in the UI
+   so it can never be mistaken for a real submission.
+   ========================================================================= */
+const Demo = {
+  UNITS: ["Barlborough","Birmingham","Devizes","Emersons Green","Gillingham","Buckinghamshire MSK","Ilford","Plymouth","Rochdale","Shepton Mallet","Southampton","St Mary's Portsmouth","Offshore Unit","Group-wide"],
+
+  PEOPLE: ["Sumanth","Saif","Prashanth","Test1","Test2","Test3","Test4","Test5"],
+
+  bubbles(){
+    const now = Clock.now();
+    const ago = d => now - d * DAY;
+    const sup = (names, at) => names.map((n, i) => ({ user: n, reason: ["affects_me","see_regularly","affects_patients","extra_work","agree_fix"][i % 5], comment: "", at: at + (i + 1) * 3600000 }));
+
+    const raw = [
+      { creator:"Sumanth", unit:"Offshore Unit", area:"patient support", process:"Extracting patient lists from Outpatient clinic list on maxims ",
+        severity:5, type:"patient", status:"under_review", owner:"Technology",
+        problem:"Extracting patient lists from Outpatient clinic list on maxims to call DNA and Reminder patients and to keep track of the individual person to address missed calls where we need to ring back.",
+        solution:"List extract option.",
+        patientImpact:{ frequency:15, timePerOccurrence:4, peopleAffected:180, expectedWeeklySaving:240, preventsErrors:"partly" },
+        createdAt: ago(41), supporters: sup(["Saif","Prashanth","Test1","Test2","Test3","Test4","Test5"], ago(41)),
+        meta:{ formSeconds: 430, source:"demo" } },
+
+      { creator:"Saif", unit:"Group-wide", area:"patient support", process:"Patient Location",
+        severity:4, type:"patient", status:"acknowledged", owner:"",
+        problem:"Ability to see the location of the patient",
+        solution:"Show the caller's region on screen when the contact lands and the nearest centres",
+        patientImpact:{ frequency:15, timePerOccurrence:3, peopleAffected:120, expectedWeeklySaving:150, preventsErrors:"no" },
+        createdAt: ago(34), supporters: sup(["Sumanth","Prashanth","Test1","Test2","Test3","Test4","Test5"], ago(34)),
+        meta:{ formSeconds: 300, source:"demo" } },
+
+      { creator:"Prashanth", unit:"Offshore Unit", area:"patient support", process:"Holding notes mid-conversation",
+        severity:3, type:"internal", status:"new", owner:"",
+        problem:"Unable to use sticky notes to write the patient conversation",
+        solution:"Enable sticky notes on the desktop that attach to the open record, auto-saved and visible to whoever picks the patient up next.",
+        createdAt: ago(18), supporters: sup(["Sumanth","Saif","Test1","Test2","Test3","Test4","Test5"], ago(18)),
+        meta:{ formSeconds: 210, source:"demo" } },
+
+      { creator:"Sumanth", unit:"Barlborough", area:"Bookings", process:"Confirming appointments",
+        severity:4, type:"patient", status:"in_progress", owner:"Booking Operations", targetDate: now + 9 * DAY,
+        problem:"Very Low usage of NHS-PKB App.",
+        solution:"Send a text with the date, time and site as soon as the booking is made and also encourage PKB",
+        patientImpact:{ frequency:15, timePerOccurrence:4, peopleAffected:200, expectedWeeklySaving:200, preventsErrors:"partly" },
+        createdAt: ago(27), supporters: sup(["Saif","Prashanth","Test1","Test2","Test3","Test4","Test5"], ago(27)),
+        meta:{ formSeconds: 265, source:"demo" } },
+
+      { creator:"Test1", unit:"Ilford", area:"Scheduling", process:"Chasing pre-visit forms",
+        severity:4, type:"internal", status:"planned", owner:"Operations", targetDate: now + 20 * DAY,
+        problem:"Pre-visit forms come back on paper or not at all, so the team telephones round the day before and a late answer can cancel the whole schedule on the morning.",
+        solution:"A digital form sent with the confirmation message, flagging any exception straight to the scheduling team.",
+        createdAt: ago(21), supporters: sup(["Sumanth","Saif","Prashanth","Test2","Test3","Test4","Test5"], ago(21)),
+        meta:{ formSeconds: 240, source:"demo" } },
+
+      { creator:"Test2", unit:"Offshore Unit", area:"patient support", process:"Late night handover",
+        severity:3, type:"patient", status:"new", owner:"",
+        problem:"Anything the late night shift cannot close sits in a shared mailbox with no owner. The daytime team picks it up mid-morning, so a patient who wrote at 9pm hears back the following afternoon.",
+        solution:"A named owner per centre on the rota for the first hour of the day, the same as the phone line already has.",
+        patientImpact:{ frequency:10, timePerOccurrence:6, peopleAffected:45, expectedWeeklySaving:90, preventsErrors:"partly" },
+        createdAt: ago(14), supporters: sup(["Test3","Test4","Test5"], ago(14)),
+        meta:{ formSeconds: 195, source:"demo" } },
+
+      { creator:"Test3", unit:"Plymouth", area:"patient support", process:"Inbound call queue",
+        severity:5, type:"patient", status:"new", owner:"",
+        problem:"There is no callback option on the main line. At Monday peak, patients wait eighteen minutes or hang up and try again, which inflates the queue further. Abandonment is the headline number on the weekly report and the team has no lever to pull.",
+        solution:"Offer a callback that holds the caller's place in the queue. It is a standard feature of the phone system already in use — it simply is not switched on.",
+        patientImpact:{ frequency:25, timePerOccurrence:16, peopleAffected:260, expectedWeeklySaving:380, preventsErrors:"no" },
+        createdAt: ago(37), supporters: sup(["Test3","Test5"], ago(37)),
+        meta:{ formSeconds: 520, source:"demo" } },
+
+      { creator:"Test4", unit:"Shepton Mallet", area:"patient support", process:"Follow-up on DNA",
+        severity:2, type:"internal", status:"new", owner:"",
+        problem:"The DNA list should be able to extract as a spreadsheet.",
+        solution:"List extraction on maxims",
+        createdAt: ago(6), supporters: sup(["Sumanth"], ago(6)),
+        meta:{ formSeconds: 150, source:"demo" } },
+
+      { creator:"Test5", unit:"Gillingham", area:"patient support", process:"Transferring a pt contact between centre and Offshore Unit",
+        severity:2, type:"internal", status:"new", owner:"",
+        problem:"Extension lists live in a different place at every centre and half are out of date, so a transfer often rings out and the patient calls back from scratch.",
+        solution:"One directory for all twelve centres on the intranet homepage, with a named owner.",
+        createdAt: ago(3), supporters: [], meta:{ formSeconds: 120, source:"demo" } },
+
+      { creator:"Saif", unit:"Devizes", area:"Facilities", process:"Meeting room booking",
+        severity:1, type:"internal", status:"deletion_requested", owner:"",
+        problem:"The room booking screen shows error or crashes randomly at times.",
+        solution:"Remove the retired rooms from the list.",
+        createdAt: ago(9), supporters: [],
+        deletion:{ requested:true, reason:"solved", description:"Facilities removed the old rooms last week.", requestedAt: ago(1), requestedBy:"L. Fontaine" },
+        meta:{ formSeconds: 95, source:"demo" } },
+
+      { creator:"Prashanth", unit:"Offshore Unit", area:"patient support", process:"Weekend mailbox cover",
+        severity:3, type:"patient", status:"resolved", owner:"Operations",
+        problem:"Weekend enquiries landed in an unowned mailbox and were answered on Monday, so patients due an appointment on Monday morning received no reply at all.",
+        solution:"Name a weekend owner per region on the rota.",
+        patientImpact:{ frequency:10, timePerOccurrence:5, peopleAffected:40, expectedWeeklySaving:120, preventsErrors:"partly" },
+        createdAt: ago(19), supporters: sup(["Sumanth","Saif"], ago(19)),
+        resolution:{ outcome:"implemented", response:"Weekend owner added to the rota from the 3rd, one per region, with the offshore Unit covering 06:00–14:00. The mailbox now has a two-hour response target and is reported weekly alongside the phone line.",
+          expectedBenefit:"120 minutes a week returned, no Monday backlog.", actualBenefit:"Backlog cleared; average weekend reply now 95 minutes.",
+          effortHours: 6, patientsBefore: 40, patientsAfter: 4, resolvedAt: ago(2), resolvedBy:"Ops", popped: true },
+        meta:{ formSeconds: 280, source:"demo" } }
+    ];
+
+    return raw.map((r, i) => {
+      r.isDemo = true;
+      const b = Model.normalize(r, i);
+      /* a richer, believable activity trail for the demo records */
+      const trail = [{ at: b.createdAt, actor: b.creator, role: "employee", action: "created" }];
+      b.supporters.forEach(s => trail.push({ at: s.at, actor: s.user, role: "employee", action: "supported", note: SUPPORT_REASONS[s.reason] }));
+      if(b.owner) trail.push({ at: b.createdAt + 2 * DAY, actor: "Ops", role: "ops", action: "owner_changed", field: "Owner", from: "Unassigned", to: b.owner });
+      if(b.status !== "new" && b.status !== "deletion_requested")
+        trail.push({ at: b.createdAt + 2 * DAY, actor: "Ops", role: "ops", action: "status_changed", field: "Status", from: "New", to: STATUS[b.status].label });
+      if(b.deletion.requested)
+        trail.push({ at: b.deletion.requestedAt, actor: b.deletion.requestedBy, role: "employee", action: "deletion_requested", note: DELETE_REASONS[b.deletion.reason] + " — " + b.deletion.description });
+      if(b.resolution.resolvedAt)
+        trail.push({ at: b.resolution.resolvedAt, actor: "Ops", role: "ops", action: "resolved", note: b.resolution.response });
+      b.activity = trail.sort((x, y) => x.at - y.at);
+      return b;
+    });
+  }
+};
+
+/* ===================== Storage ============================================
+   The ONLY module that knows how data is persisted. Every UI action goes
+   through these methods, so swapping localStorage for an HTTP API later is a
+   change to this object alone.
+   ========================================================================= */
+const Storage = {
+  state: null,
+
+  fresh(){
+    return {
+      version: 2,
+      bubbles: [],
+      user: { name: "", unit: "", role: "employee" },
+      pin: "1234",
+      offset: 0,
+      theme: "deep",
+      weights: Object.assign({}, DEFAULT_WEIGHTS),
+      units: Demo.UNITS.slice()
     };
-  } else {
-    foot.innerHTML = `<button class="btn primary" data-close>Close</button>`;
+  },
+
+  load(){
+    let s = null;
+    try {
+      const rawV2 = localStorage.getItem(STORE_KEY);
+      if(rawV2) s = JSON.parse(rawV2);
+      if(!s){
+        const rawV1 = localStorage.getItem(LEGACY_KEY);
+        if(rawV1) s = Storage.migrateV1(JSON.parse(rawV1));
+      }
+    } catch(err){ console.warn("Bubble: could not read saved data, starting fresh.", err); s = null; }
+
+    const base = Storage.fresh();
+    s = Object.assign(base, s || {});
+    s.weights = Object.assign({}, DEFAULT_WEIGHTS, s.weights || {});
+    s.user    = Object.assign({ name: "", unit: "", role: "employee" }, s.user || {});
+    s.units   = (s.units && s.units.length) ? s.units : Demo.UNITS.slice();
+    s.version = 2;
+    Clock.offset = s.offset || 0;
+
+    s.bubbles = Array.isArray(s.bubbles) ? s.bubbles.map((b, i) => Model.normalize(b, i)) : [];
+    if(!s.bubbles.length) s.bubbles = Demo.bubbles();
+
+    Storage.state = s;
+    return s;
+  },
+
+  /* v1 records used author/rating/backers/status:"popped" — normalize() knows
+     how to read them, so migration is mostly a rename of the envelope. */
+  migrateV1(old){
+    return {
+      version: 2,
+      bubbles: (old.bubbles || []),
+      user: { name: old.me || "", unit: old.myUnit || "", role: "employee" },
+      pin: old.pin || "1234",
+      offset: old.offset || 0,
+      theme: old.theme || "deep",
+      weights: Object.assign({}, DEFAULT_WEIGHTS)
+    };
+  },
+
+  save(){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(Storage.state)); }
+    catch(err){ UI.toast("Could not save — browser storage is full or blocked."); }
+    return Storage.state;
+  },
+
+  all(){ return Storage.state.bubbles; },
+  get(id){ return Storage.state.bubbles.find(b => b.id === id) || null; },
+
+  addBubble(b){ Storage.state.bubbles.unshift(b); Storage.save(); return b; },
+
+  /* mutator(bubble) may change the record; entries are appended to activity. */
+  updateBubble(id, mutator, activityEntries){
+    const b = Storage.get(id);
+    if(!b) return null;
+    if(typeof mutator === "function") mutator(b);
+    b.updatedAt = Clock.now();
+    (activityEntries || []).forEach(e => b.activity.push(e));
+    b.activity.sort((x, y) => x.at - y.at);
+    Storage.save();
+    return b;
+  },
+
+  addActivity(id, entry){
+    return Storage.updateBubble(id, null, [entry]);
+  },
+
+  setSetting(key, value){ Storage.state[key] = value; Storage.save(); },
+
+  replaceAll(data){
+    const s = Object.assign(Storage.fresh(), data || {});
+    s.bubbles = (s.bubbles || []).map((b, i) => Model.normalize(b, i));
+    s.weights = Object.assign({}, DEFAULT_WEIGHTS, s.weights || {});
+    Storage.state = s;
+    Clock.offset = s.offset || 0;
+    Storage.save();
+    return s;
+  },
+
+  exportJSON(){ return JSON.stringify(Storage.state, null, 2); },
+
+  resetDemo(){
+    Storage.state.offset = 0;
+    Clock.offset = 0;
+    Storage.state.bubbles = Demo.bubbles();
+    Storage.save();
+  },
+
+  wipe(){
+    Storage.state.bubbles = [];
+    Storage.save();
   }
-  show("#detailVeil");
-}
-
-function popBubble(id, answer){
-  const b = S.bubbles.find(x => x.id===id);
-  b.status = "popped"; b.answer = answer; b.poppedAt = Date.now(); b.poppedBy = "Ops team";
-  save(); hide("#detailVeil");
-  const el = document.querySelector(`.bub[data-id="${id}"]`);
-  if(el){ el.classList.add("popping"); setTimeout(renderAdmin, 420); } else renderAdmin();
-  toast("Popped — the answer is on the record.");
-}
-
-/* ---------------- settings ---------------- */
-$("#settingsBtn").onclick = () => {
-  $("#sPin").value = S.pin; $("#sDays").value = S.offset; daysLabel(); show("#setVeil");
 };
-$("#sPin").addEventListener("input", e => { S.pin = e.target.value || "1234"; save(); });
-$("#sDays").addEventListener("input", e => { S.offset = +e.target.value; save(); daysLabel(); renderAdmin(); });
-function daysLabel(){
-  $("#sDaysLabel").textContent = S.offset===0
-    ? "Today. Drag to fast-forward and watch neglected customer bubbles swell."
-    : `Pretending it is ${S.offset} day${S.offset>1?"s":""} from now.`;
-}
-$("#sExport").onclick = () => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:"application/json"}));
-  a.download = "bubble-data.json"; a.click(); URL.revokeObjectURL(a.href);
+
+/* ===================== Auth / permissions =================================
+   Prototype only: a shared PIN unlocks the ops role in this browser.
+   Replace signIn()/role with an SSO token + role claim and the permission
+   checks below keep working unchanged.
+   ========================================================================= */
+const Auth = {
+  opsUnlocked: false,
+  user(){ return Storage.state.user; },
+  name(){ return Storage.state.user.name || ""; },
+  role(){ return Auth.opsUnlocked ? "ops" : "employee"; },
+  isOps(){ return Auth.role() === "ops"; },
+  actor(){ return { name: Auth.isOps() ? (Auth.name() || "Ops") : Auth.name(), role: Auth.role() }; },
+
+  signInOps(pin){
+    if(pin === Storage.state.pin){ Auth.opsUnlocked = true; return true; }
+    return false;
+  },
+  signOutOps(){ Auth.opsUnlocked = false; },
+
+  owns(b){ return !!Auth.name() && b.creatorId === Auth.name(); },
+  can(action, b){
+    switch(action){
+      case "create":        return !!Auth.name();
+      case "support":       return !!Auth.name() && !Auth.owns(b) && !Calc.isClosed(b);
+      case "edit":          return Auth.owns(b) && !Calc.isClosed(b);
+      case "requestDelete": return Auth.owns(b) && !Calc.isClosed(b) && !b.deletion.requested;
+      case "opsRespond":
+      case "assign":
+      case "setStatus":
+      case "reviewDeletion":
+      case "resolve":       return Auth.isOps();
+      case "viewCreator":   return b.privacy === "named" || Auth.isOps() || Auth.owns(b);
+      default: return false;
+    }
+  },
+  displayCreator(b){
+    if(Auth.can("viewCreator", b)) return b.creator + (b.privacy !== "named" && !Auth.owns(b) ? " (identity restricted)" : "");
+    return b.privacy === "anonymous" ? "Anonymous" : "Confidential";
+  }
 };
-$("#sImport").onclick = () => $("#fileIn").click();
-$("#fileIn").addEventListener("change", e => {
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = () => {
-    try{ const d = JSON.parse(r.result); if(!d.bubbles) throw 0; S = Object.assign(S,d); save(); renderAll(); toast("Data imported."); }
-    catch(err){ toast("That file isn't a Bubble export."); }
+/* ===================== UI ===================== */
+const UI = {
+  mode: "user",
+  userTab: "mine",
+  userChip: "all",
+  opsView: "field",
+  archive: false,
+  filters: { search:"", unit:"", area:"", process:"", type:"", sev:"", status:"", owner:"", age:"", from:"", to:"", quick:"" },
+  detail: { id: null, tab: "overview", panel: null },
+  form: { mode: "create", id: null, type: "internal", severity: 3, openedAt: 0, timer: null, submitting: false },
+
+  /* ---------- tiny helpers ---------- */
+  toastId: null,
+  toast(msg){
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(UI.toastId);
+    UI.toastId = setTimeout(() => t.classList.remove("show"), 2800);
+  },
+  show(sel){ $(sel).hidden = false; },
+  hide(sel){ $(sel).hidden = true; },
+  closeModals(){ $$(".veil").forEach(v => v.hidden = true); UI.stopFormTimer(); },
+  stopFormTimer(){ clearInterval(UI.form.timer); UI.form.timer = null; },
+
+  sevPill(b){
+    return '<span class="pill"><span class="dot" style="background:' + SEVERITY[b.severity].color + '"></span>' +
+           b.severity + ' · ' + SEVERITY[b.severity].label + '</span>';
+  },
+  statusPill(b){
+    const st = STATUS[b.status] || STATUS.new;
+    return '<span class="pill ' + (st.tone || "") + '">' + esc(st.label) + '</span>';
+  },
+  stagePill(b){
+    const s = Calc.stage(b);
+    if(s.key === "normal" || s.key === "closed") return "";
+    return '<span class="pill ' + (s.tone || "") + '">' + esc(s.label) + '</span>';
+  },
+  demoPill(b){ return b.isDemo ? '<span class="pill demo">demo data</span>' : ""; },
+  ageText(b){
+    const d = Math.floor(Calc.ageDays(b));
+    return d === 0 ? "today" : d === 1 ? "1 day" : d + " days";
+  },
+
+  /* =======================================================================
+     SHELL
+     ======================================================================= */
+  renderShell(){
+    document.documentElement.dataset.theme = Storage.state.theme || "deep";
+    $("#whoName").textContent = Auth.name() || "Set your name";
+    $("#whoRole").textContent = Auth.role();
+    $("#tabUser").setAttribute("aria-pressed", UI.mode === "user");
+    $("#tabOps").setAttribute("aria-pressed", UI.mode === "ops");
+    $("#userView").hidden = UI.mode !== "user";
+    $("#opsView").hidden  = UI.mode !== "ops";
+    $("#fabNew").hidden   = UI.mode !== "user";
+  },
+  render(){
+    UI.renderShell();
+    if(UI.mode === "user") UI.renderUser(); else UI.renderOps();
+  },
+
+  /* =======================================================================
+     USER HOME
+     ======================================================================= */
+  renderUser(){
+    const all = Storage.all();
+    const banner = $("#demoBanner");
+    if(banner) banner.hidden = !all.some(b => b.isDemo);
+    const mine = all.filter(b => b.creatorId === Auth.name());
+    const supported = all.filter(b => (b.supporters || []).some(s => s.user === Auth.name()));
+    const open = all.filter(b => !Calc.isClosed(b));
+    const resolved = all.filter(b => b.status === "resolved" || b.status === "closed");
+
+    $("#userStats").innerHTML = [
+      ["Open bubbles", open.length],
+      ["Resolved", resolved.length],
+      ["Raised by me", mine.length],
+      ["Supported by me", supported.length]
+    ].map(x => '<div class="stat"><div class="n">' + x[1] + '</div><div class="l">' + x[0] + '</div></div>').join("");
+
+    ["mine","explore","supported"].forEach(t =>
+      $("#tab" + t.charAt(0).toUpperCase() + t.slice(1)).setAttribute("aria-selected", UI.userTab === t));
+
+    /* chip row changes meaning per tab */
+    let chips;
+    if(UI.userTab === "mine"){
+      chips = [["all","All"],["open","Open"]].concat(OPEN_STATUSES.map(s => [s, STATUS[s].label]))
+        .concat([["resolved","Resolved"],["closed","Closed"],["withdrawn","Withdrawn"]]);
+    } else if(UI.userTab === "explore"){
+      chips = [["biggest","Biggest"],["growing","Growing"],["supported","Most supported"],["recent","Recently raised"],["patient","patient-impacting"],["resolved","Resolved"]];
+    } else {
+      chips = [["all","All"]];
+    }
+    if(!chips.some(c => c[0] === UI.userChip)) UI.userChip = chips[0][0];
+    $("#userChips").innerHTML = chips.map(c =>
+      '<button class="chip" data-chip="' + c[0] + '" aria-pressed="' + (UI.userChip === c[0]) + '">' + esc(c[1]) + '</button>').join("");
+
+    let list = [];
+    if(UI.userTab === "mine"){
+      list = mine.filter(b => {
+        if(UI.userChip === "all") return true;
+        if(UI.userChip === "open") return !Calc.isClosed(b);
+        return b.status === UI.userChip;
+      }).sort((a, b) => b.createdAt - a.createdAt);
+    } else if(UI.userTab === "supported"){
+      list = supported.slice().sort((a, b) => Calc.radius(b) - Calc.radius(a));
+    } else {
+      const openOnly = all.filter(b => !Calc.isClosed(b));
+      if(UI.userChip === "biggest")        list = openOnly.slice().sort((a, b) => Calc.radius(b) - Calc.radius(a));
+      else if(UI.userChip === "growing")   list = openOnly.filter(b => Calc.stage(b).pressure > 0).sort((a, b) => Calc.stage(b).pressure - Calc.stage(a).pressure);
+      else if(UI.userChip === "supported") list = openOnly.slice().sort((a, b) => Calc.supportCount(b) - Calc.supportCount(a));
+      else if(UI.userChip === "recent")    list = openOnly.slice().sort((a, b) => b.createdAt - a.createdAt);
+      else if(UI.userChip === "patient")  list = openOnly.filter(b => b.type === "patient").sort((a, b) => Calc.weeklyMinutes(b) - Calc.weeklyMinutes(a));
+      else                                 list = all.filter(b => Calc.isClosed(b)).sort((a, b) => (b.resolution.resolvedAt || b.updatedAt) - (a.resolution.resolvedAt || a.updatedAt));
+    }
+
+    const wrap = $("#userCards");
+    if(!list.length){
+      wrap.innerHTML = '<div class="empty" style="grid-column:1/-1"><b>' +
+        (UI.userTab === "mine" ? (Auth.name() ? "Nothing here yet" : "Tell us who you are first") : "Nothing to show") + '</b>' +
+        (UI.userTab === "mine" ? "Raise a bubble and colleagues can support it." : "Try another filter.") + '</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(b => UI.card(b)).join("");
+  },
+
+  card(b){
+    const supported = (b.supporters || []).some(s => s.user === Auth.name());
+    const canSupport = Auth.can("support", b);
+    return '<article class="card" data-open="' + b.id + '">' +
+      '<div class="kicker">' + esc(b.ref) + ' · ' + esc(b.unit) + ' · ' + esc(b.area) + ' · ' + esc(b.process) + '</div>' +
+      '<h3>' + esc(b.problem.slice(0, 92)) + (b.problem.length > 92 ? "…" : "") + '</h3>' +
+      '<div class="sol">' + (b.solution ? esc(b.solution.slice(0, 110)) + (b.solution.length > 110 ? "…" : "") : "No fix suggested yet.") + '</div>' +
+      '<div class="foot">' + UI.statusPill(b) + UI.sevPill(b) + UI.stagePill(b) + UI.demoPill(b) +
+        '<span class="small muted">' + Calc.supportCount(b) + ' supporting</span><span class="spacer"></span>' +
+        (canSupport
+          ? '<button class="btn sm ' + (supported ? "ghost" : "") + '" data-support="' + b.id + '">' + (supported ? "Supporting ✓" : "Support") + '</button>'
+          : '<button class="btn sm ghost" data-open="' + b.id + '">Open</button>') +
+      '</div></article>';
+  },
+
+  /* =======================================================================
+     OPS BOARD
+     ======================================================================= */
+  renderOps(){
+    $("#gate").hidden = Auth.isOps();
+    $("#opsBoard").hidden = !Auth.isOps();
+    if(!Auth.isOps()) return;
+
+    UI.syncFilterOptions();
+    UI.renderKpis();
+
+    const views = { field:"#field", list:"#listWrap", queue:"#queueWrap", deletions:"#deletionsWrap", insights:"#insightsWrap" };
+    Object.keys(views).forEach(v => { $(views[v]).hidden = (UI.opsView !== v); });
+    ["field","list","queue","deletions","insights"].forEach(v =>
+      $("#view" + v.charAt(0).toUpperCase() + v.slice(1)).setAttribute("aria-pressed", UI.opsView === v));
+    $("#archiveBtn").textContent = UI.archive ? "← Active" : "Archive";
+
+    if(UI.opsView === "field") UI.renderField();
+    else if(UI.opsView === "list") UI.renderList();
+    else if(UI.opsView === "queue") UI.renderQueue();
+    else if(UI.opsView === "deletions") UI.renderDeletions();
+    else UI.renderInsights();
+  },
+
+  syncFilterOptions(){
+    const all = Storage.all();
+    const fill = (sel, values, allLabel) => {
+      const el = $(sel), keep = el.value;
+      el.innerHTML = '<option value="">' + allLabel + '</option>' +
+        values.map(v => '<option' + (v === keep ? " selected" : "") + '>' + esc(v) + '</option>').join("");
+      el.value = keep;
+    };
+    fill("#fUnit", Array.from(new Set(all.map(b => b.unit))).sort(), "All units");
+    fill("#fArea", Array.from(new Set(all.map(b => b.area))).sort(), "All areas");
+    fill("#fProcess", Array.from(new Set(all.map(b => b.process))).sort(), "All processes");
+    fill("#fOwner", Array.from(new Set(all.map(b => b.owner).filter(Boolean))).sort().concat(["Unassigned"]), "Any owner");
+    const st = $("#fStatus"), keepSt = st.value;
+    st.innerHTML = '<option value="">Any status</option>' +
+      Object.keys(STATUS).map(k => '<option value="' + k + '"' + (k === keepSt ? " selected" : "") + '>' + STATUS[k].label + '</option>').join("");
+    st.value = keepSt;
+  },
+
+  /* central filter + sort pipeline used by every ops view */
+  opsList(){
+    const F = UI.filters;
+    let list = Storage.all().filter(b => UI.archive ? Calc.isClosed(b) : !Calc.isClosed(b));
+
+    if(F.unit)    list = list.filter(b => b.unit === F.unit);
+    if(F.area)    list = list.filter(b => b.area === F.area);
+    if(F.process) list = list.filter(b => b.process === F.process);
+    if(F.type)    list = list.filter(b => b.type === F.type);
+    if(F.sev)     list = list.filter(b => String(b.severity) === F.sev);
+    if(F.status)  list = list.filter(b => b.status === F.status);
+    if(F.owner)   list = list.filter(b => F.owner === "Unassigned" ? !b.owner : b.owner === F.owner);
+    if(F.age){
+      const parts = F.age.split("-").map(Number);
+      list = list.filter(b => { const d = Calc.ageDays(b); return d >= parts[0] && d <= parts[1]; });
+    }
+    if(F.from) list = list.filter(b => b.createdAt >= new Date(F.from + "T00:00:00").getTime());
+    if(F.to)   list = list.filter(b => b.createdAt <= new Date(F.to + "T23:59:59").getTime());
+    if(F.search){
+      const q = F.search.toLowerCase();
+      list = list.filter(b => [b.problem, b.solution, b.area, b.process, b.unit, b.creator, b.ref, b.owner]
+        .join(" ").toLowerCase().indexOf(q) > -1);
+    }
+    if(F.quick === "critical")   list = list.filter(b => b.severity === 5);
+    if(F.quick === "growing")    list = list.filter(b => Calc.stage(b).pressure > 0);
+    if(F.quick === "overdue")    list = list.filter(b => Calc.stage(b).key === "breached" || Calc.stage(b).key === "overdue");
+    if(F.quick === "unassigned") list = list.filter(b => !b.owner);
+    if(F.quick === "review")     list = list.filter(b => b.status === "under_review");
+    if(F.quick === "progress")   list = list.filter(b => b.status === "in_progress");
+
+    const W = Storage.state.weights;
+    const cmp = {
+      pressure:   (x, y) => Calc.pressure(y, W).score - Calc.pressure(x, W).score,
+      size:       (x, y) => Calc.radius(y) - Calc.radius(x),
+      severity:   (x, y) => y.severity - x.severity || Calc.radius(y) - Calc.radius(x),
+      supporters: (x, y) => Calc.supportCount(y) - Calc.supportCount(x),
+      age:        (x, y) => x.createdAt - y.createdAt,
+      unit:       (x, y) => x.unit.localeCompare(y.unit) || Calc.radius(y) - Calc.radius(x),
+      area:       (x, y) => x.area.localeCompare(y.area) || Calc.radius(y) - Calc.radius(x),
+      status:     (x, y) => STATUS[x.status].label.localeCompare(STATUS[y.status].label),
+      owner:      (x, y) => (x.owner || "zzz").localeCompare(y.owner || "zzz"),
+      impact:     (x, y) => Calc.weeklyMinutes(y) - Calc.weeklyMinutes(x)
+    }[$("#fSort").value] || ((x, y) => Calc.radius(y) - Calc.radius(x));
+
+    return list.sort(cmp);
+  },
+
+  renderKpis(){
+    const open = Storage.all().filter(b => !Calc.isClosed(b));
+    const st = k => open.filter(b => Calc.stage(b).key === k).length;
+    const cards = [
+      ["", open.length, "Open bubbles"],
+      ["critical", open.filter(b => b.severity === 5).length, "Critical (sev 5)"],
+      ["growing", open.filter(b => Calc.stage(b).pressure > 0).length, "Growing"],
+      ["overdue", st("breached") + st("overdue"), "Overdue / breached"],
+      ["unassigned", open.filter(b => !b.owner).length, "Unassigned"],
+      ["review", open.filter(b => b.status === "under_review").length, "Under review"],
+      ["progress", open.filter(b => b.status === "in_progress").length, "In progress"],
+      ["deletions", Storage.all().filter(b => b.deletion.requested && !b.deletion.approvedAt && !b.deletion.rejectedAt).length, "Removal requests"]
+    ];
+    $("#kpis").innerHTML = cards.map(c =>
+      '<button class="kpi" data-quick="' + c[0] + '" aria-pressed="' + (UI.filters.quick === c[0] && c[0] !== "") + '">' +
+      '<div class="n">' + c[1] + '</div><div class="l">' + c[2] + '</div></button>').join("");
+  },
+
+  /* ---------- bubble field: biggest in the centre ---------- */
+  pack(items){
+    const placed = [];
+    items.forEach((it, i) => {
+      if(i === 0){ it.x = 0; it.y = 0; placed.push(it); return; }
+      const gap = 7;
+      outer:
+      for(let rad = it.r; rad < 5000; rad += 7){
+        const steps = Math.max(14, Math.round(2 * Math.PI * rad / Math.max(16, it.r * 0.75)));
+        const spin = rad * 0.11;
+        for(let s = 0; s < steps; s++){
+          const ang = spin + (s / steps) * Math.PI * 2;
+          const x = Math.cos(ang) * rad * 1.12, y = Math.sin(ang) * rad * 0.86;
+          let ok = true;
+          for(let j = 0; j < placed.length; j++){
+            const p = placed[j], dx = p.x - x, dy = p.y - y;
+            if(dx * dx + dy * dy < Math.pow(p.r + it.r + gap, 2)){ ok = false; break; }
+          }
+          if(ok){ it.x = x; it.y = y; placed.push(it); break outer; }
+        }
+      }
+      if(it.x === undefined){ it.x = 0; it.y = 0; placed.push(it); }
+    });
+    return placed;
+  },
+
+  renderField(){
+    const host = $("#field");
+    const list = UI.opsList().slice().sort((a, b) => Calc.radius(b) - Calc.radius(a));
+    host.innerHTML = "";
+    if(!list.length){
+      host.innerHTML = '<div class="empty" style="position:absolute;inset:26px;display:grid;align-content:center;border:0">' +
+        '<b>' + (UI.archive ? "Nothing archived yet" : "No bubbles match these filters") + '</b>' +
+        (UI.archive ? "Resolved and withdrawn bubbles collect here." : "Clear the filters to see the whole field.") + '</div>';
+      return;
+    }
+    const items = UI.pack(list.map(b => ({ b: b, r: Calc.radius(b) })));
+    let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    items.forEach(i => { minX = Math.min(minX, i.x - i.r); maxX = Math.max(maxX, i.x + i.r); minY = Math.min(minY, i.y - i.r); maxY = Math.max(maxY, i.y + i.r); });
+    const w = maxX - minX, h = maxY - minY;
+    const cw = host.clientWidth - 30, ch = host.clientHeight - 46;
+    const scale = Math.min(1.25, cw / w, ch / h);
+    const offX = (cw - w * scale) / 2 + 15 - minX * scale;
+    const offY = (ch - h * scale) / 2 + 14 - minY * scale;
+
+    items.forEach((it, i) => {
+      const b = it.b, d = it.r * 2 * scale, c = SEVERITY[b.severity].color;
+      const stage = Calc.stage(b), p = stage.pressure;
+      const ring = p > 0 ? ', 0 0 0 ' + (2 + p * 7).toFixed(1) + 'px ' + (p > 0.6 ? 'rgba(255,107,129,' : 'rgba(255,178,92,') + (0.16 + p * 0.3).toFixed(2) + '), 0 0 ' + Math.round(14 + p * 36) + 'px ' + (p > 0.6 ? 'rgba(255,107,129,.5)' : 'rgba(255,178,92,.4)') : '';
+      const el = document.createElement("button");
+      el.className = "bub" + (d < 76 ? " tiny" : "") + (p >= 0.8 ? " pulse" : "");
+      el.style.cssText =
+        'width:' + d + 'px;height:' + d + 'px;left:' + (offX + it.x * scale - it.r * scale) + 'px;top:' + (offY + it.y * scale - it.r * scale) + 'px;' +
+        'background:radial-gradient(circle at 32% 26%, rgba(255,255,255,.92) 0 5%, ' + c + 'dd 24%, ' + c + '77 62%, ' + c + '33 100%);' +
+        'box-shadow:inset 0 -10px 24px ' + c + '55' + ring + ';' +
+        'animation-delay:' + ((i % 7) * 0.6) + 's;font-size:' + Math.max(10, Math.min(17, d / 9)) + 'px';
+      el.dataset.open = b.id;
+      el.title = b.ref + " — " + b.problem;
+      el.innerHTML = '<div class="b-t">' + esc(b.unit) + '</div><div class="b-m">' +
+        Calc.supportCount(b) + ' supporting · sev ' + b.severity + (p > 0 ? ' · day ' + Math.floor(Calc.ageDays(b)) : '') + '</div>';
+      host.appendChild(el);
+    });
+
+    const note = document.createElement("div");
+    note.className = "field-note";
+    note.innerHTML =
+      '<span class="legend"><i style="background:var(--glow)"></i>size = people supporting</span>' +
+      '<span class="legend"><i style="background:linear-gradient(90deg,#4fd1a5,#ff6b81)"></i>colour = severity</span>' +
+      '<span class="legend"><i style="background:transparent;box-shadow:0 0 0 3px rgba(255,107,129,.5)"></i>glow = age / overdue pressure</span>' +
+      '<span>' + list.length + ' bubbles · biggest in the centre</span>';
+    host.appendChild(note);
+  },
+
+  renderList(){
+    const list = UI.opsList();
+    const W = Storage.state.weights;
+    $("#listBody").innerHTML = list.length ? list.map((b, i) => {
+      const pr = Calc.pressure(b, W), stage = Calc.stage(b);
+      return '<tr data-open="' + b.id + '">' +
+        '<td class="muted">' + esc(b.ref) + '</td>' +
+        '<td><div style="font-weight:600;max-width:40ch">' + esc(b.problem.slice(0, 84)) + (b.problem.length > 84 ? "…" : "") + '</div>' +
+          '<div class="small muted" style="margin-top:3px">' + esc(b.process) + ' · ' + esc(Auth.displayCreator(b)) + (b.isDemo ? ' · demo' : '') + '</div></td>' +
+        '<td>' + esc(b.unit) + '</td><td>' + esc(b.area) + '</td>' +
+        '<td><span class="pill"><span class="dot" style="background:' + SEVERITY[b.severity].color + '"></span>' + b.severity + '</span></td>' +
+        '<td>' + Calc.supportCount(b) + '</td>' +
+        '<td>' + UI.statusPill(b) + '</td>' +
+        '<td>' + (b.owner ? esc(b.owner) : '<span class="muted">unassigned</span>') + '</td>' +
+        '<td>' + UI.ageText(b) + (stage.pressure > 0 ? '<div class="small" style="color:var(--warn)">' + esc(stage.label) + '</div>' : '') + '</td>' +
+        '<td><div class="meter ' + (pr.score > 65 ? "hot" : "") + '"><i style="width:' + pr.score + '%"></i></div>' +
+          '<div class="small muted" style="margin-top:4px">' + pr.score + ' / 100</div></td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="10" style="padding:36px;text-align:center" class="muted">Nothing matches these filters.</td></tr>';
+  },
+
+  renderQueue(){
+    const open = UI.opsList().filter(b => !Calc.isClosed(b));
+    const W = Storage.state.weights;
+    const used = new Set();
+    const take = (test) => open.filter(b => !used.has(b.id) && test(b)).map(b => { used.add(b.id); return b; });
+    const groups = [
+      { icon: "🔥", title: "SLA breached — decision required", items: take(b => Calc.stage(b).key === "breached" || Calc.stage(b).key === "overdue") },
+      { icon: "🔴", title: "Critical severity", items: take(b => b.severity === 5) },
+      { icon: "🟠", title: "Growing quickly", items: take(b => Calc.stage(b).pressure > 0) },
+      { icon: "🟡", title: "Awaiting an owner", items: take(b => !b.owner) },
+      { icon: "⚪", title: "Everything else", items: take(() => true) }
+    ];
+    $("#queueWrap").innerHTML = groups.filter(g => g.items.length).map(g =>
+      '<div class="queue-group"><h3>' + g.icon + ' ' + esc(g.title) + ' <span class="pill">' + g.items.length + '</span></h3>' +
+      g.items.sort((a, b) => Calc.pressure(b, W).score - Calc.pressure(a, W).score).map(b =>
+        '<div class="qrow" data-open="' + b.id + '">' +
+          '<span class="pill"><span class="dot" style="background:' + SEVERITY[b.severity].color + '"></span>' + b.severity + '</span>' +
+          '<span class="t">' + esc(b.problem.slice(0, 96)) + (b.problem.length > 96 ? "…" : "") +
+            '<div class="small muted">' + esc(b.ref) + ' · ' + esc(b.unit) + ' · ' + esc(b.area) + ' · ' + UI.ageText(b) + '</div></span>' +
+          UI.statusPill(b) +
+          '<span class="pill">' + Calc.supportCount(b) + ' supporting</span>' +
+          '<span class="pill">' + (b.owner ? esc(b.owner) : "unassigned") + '</span>' +
+          '<span class="pill ' + (Calc.pressure(b, W).score > 65 ? "hot" : "") + '">pressure ' + Calc.pressure(b, W).score + '</span>' +
+        '</div>').join("") + '</div>').join("") ||
+      '<div class="empty"><b>Queue is clear</b>Nothing is waiting on ops right now.</div>';
+  },
+
+  renderDeletions(){
+    const pending = Storage.all().filter(b => b.deletion.requested && !b.deletion.approvedAt && !b.deletion.rejectedAt);
+    const handled = Storage.all().filter(b => b.deletion.approvedAt || b.deletion.rejectedAt);
+    const row = b =>
+      '<div class="qrow" data-open="' + b.id + '">' +
+        '<span class="t">' + esc(b.problem.slice(0, 90)) + (b.problem.length > 90 ? "…" : "") +
+          '<div class="small muted">' + esc(b.ref) + ' · raised by ' + esc(Auth.displayCreator(b)) + ' · ' + esc(b.unit) + '</div>' +
+          '<div class="small" style="margin-top:4px">Reason: <b>' + esc(DELETE_REASONS[b.deletion.reason] || "—") + '</b>' +
+          (b.deletion.description ? ' — ' + esc(b.deletion.description) : '') + '</div></span>' +
+        (b.deletion.approvedAt ? '<span class="pill">approved ' + esc(Clock.fmtDate(b.deletion.approvedAt)) + '</span>' :
+         b.deletion.rejectedAt ? '<span class="pill">rejected ' + esc(Clock.fmtDate(b.deletion.rejectedAt)) + '</span>' :
+         '<button class="btn sm" data-open="' + b.id + '">Review</button>' +
+         '<button class="btn sm ok" data-approve="' + b.id + '">Approve</button>' +
+         '<button class="btn sm danger" data-reject="' + b.id + '">Reject</button>') +
+      '</div>';
+    $("#deletionsWrap").innerHTML =
+      '<div class="queue-group"><h3>Removal requests <span class="pill">' + pending.length + '</span></h3>' +
+        (pending.length ? pending.map(row).join("") : '<div class="empty"><b>No requests waiting</b>Users can ask for their own bubble to be removed; ops decides.</div>') + '</div>' +
+      (handled.length ? '<div class="queue-group"><h3>Previously decided</h3>' + handled.map(row).join("") + '</div>' : "");
+  },
+
+  renderInsights(){
+    const all = Storage.all();
+    const resolved = all.filter(b => b.resolution.resolvedAt);
+    const open = all.filter(b => !Calc.isClosed(b));
+    const minutesRecovered = resolved.reduce((s, b) => s + (num(b.patientImpact.expectedWeeklySaving) || Calc.weeklyMinutes(b)), 0);
+    const respTimes = all.map(Calc.responseHours).filter(v => v != null);
+    const resTimes  = resolved.map(Calc.resolutionDays).filter(v => v != null);
+    const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length * 10) / 10 : null;
+    const overdue = open.filter(b => ["breached","overdue"].indexOf(Calc.stage(b).key) > -1).length;
+    const stat = (n, l, sub) => '<div class="stat"><div class="n">' + n + '</div><div class="l">' + l + (sub ? '<br><span class="small">' + sub + '</span>' : '') + '</div></div>';
+
+    $("#insightsWrap").innerHTML =
+      '<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:16px">' +
+        stat(all.length, "Bubbles raised") +
+        stat(resolved.length, "Resolved") +
+        stat(all.length ? Math.round(resolved.length / all.length * 100) + "%" : "0%", "Resolution rate") +
+        stat(Math.round(minutesRecovered / 60 * 10) / 10 + " h", "Estimated time recovered", "per week, from resolved bubbles") +
+        stat(avg(respTimes) == null ? "—" : avg(respTimes) + " h", "Average first response") +
+        stat(avg(resTimes) == null ? "—" : avg(resTimes) + " d", "Average time to resolve") +
+        stat(overdue, "Overdue now") +
+        stat(open.filter(b => !b.owner).length, "Unassigned") +
+      '</div>' +
+      '<div class="box"><h4>Value tracking — resolved bubbles</h4>' +
+        (resolved.length ? '<div class="tablewrap"><table><thead><tr><th>#</th><th>Problem</th><th>Outcome</th><th>Expected benefit</th><th>Actual benefit</th><th>Effort</th><th>Payback</th></tr></thead><tbody>' +
+          resolved.map(b => '<tr data-open="' + b.id + '"><td class="muted">' + esc(b.ref) + '</td>' +
+            '<td style="max-width:30ch">' + esc(b.problem.slice(0, 70)) + '…</td>' +
+            '<td>' + esc(OUTCOMES[b.resolution.outcome] || "—") + '</td>' +
+            '<td>' + esc(b.resolution.expectedBenefit || "—") + '</td>' +
+            '<td>' + esc(b.resolution.actualBenefit || "not yet measured") + '</td>' +
+            '<td>' + (b.resolution.effortHours ? b.resolution.effortHours + " h" : "—") + '</td>' +
+            '<td>' + (Calc.paybackWeeks(b) != null ? Calc.paybackWeeks(b) + " weeks" : "—") + '</td></tr>').join("") +
+          '</tbody></table></div>'
+          : '<p class="muted small">Nothing resolved yet. Once ops pops a bubble, expected and actual benefit are tracked here.</p>') +
+      '</div>';
+  }
+};
+/* =======================================================================
+   FORM — raise a new bubble / edit your own
+   ======================================================================= */
+const Form = {
+  open(mode, id){
+    const f = UI.form;
+    f.mode = mode; f.id = id || null; f.submitting = false;
+    const b = id ? Storage.get(id) : null;
+
+    $("#formTitle").textContent = mode === "edit" ? "Edit bubble " + (b ? b.ref : "") : "Raise a bubble";
+    $("#submitBubble").textContent = mode === "edit" ? "Save changes" : "Raise it";
+    $("#formErr").hidden = true;
+    $("#dupPanel").innerHTML = "";
+
+    const units = Storage.state.units;
+    const chosen = b ? b.unit : (Storage.state.user.unit || units[0]);
+    $("#iUnit").innerHTML = Array.from(new Set(units.concat(Storage.all().map(x => x.unit))))
+      .map(u => '<option' + (u === chosen ? " selected" : "") + '>' + esc(u) + '</option>').join("");
+    $("#areaList").innerHTML = Array.from(new Set(Storage.all().map(x => x.area))).map(a => '<option value="' + esc(a) + '">').join("");
+    $("#processList").innerHTML = Array.from(new Set(Storage.all().map(x => x.process))).map(a => '<option value="' + esc(a) + '">').join("");
+    $("#iFreq").innerHTML = FREQUENCIES.map(fr => '<option value="' + fr.v + '">' + fr.label + '</option>').join("");
+
+    $("#iName").value = b ? b.creator : (Auth.name() || "");
+    $("#iName").disabled = mode === "edit";
+    $("#iArea").value = b ? b.area : "";
+    $("#iProcess").value = b ? b.process : "";
+    $("#iProblem").value = b ? b.problem : "";
+    $("#iSolution").value = b ? b.solution : "";
+    $("#iPrivacy").value = b ? b.privacy : "named";
+    Form.setType(b ? b.type : "internal");
+    Form.setSeverity(b ? b.severity : 3);
+    const ci = b ? b.patientImpact : Model.blankpatientImpact();
+    $("#iFreq").value = String(ci.frequency || 15);
+    $("#iPer").value = ci.timePerOccurrence || "";
+    $("#iPeople").value = ci.peopleAffected || "";
+    $("#iSaved").value = ci.expectedWeeklySaving || "";
+    $("#iPrevents").value = ci.preventsErrors || "no";
+    Form.impactPreview();
+
+    UI.show("#formVeil");
+    Form.startTimer();
+    $("#iName").focus();
+  },
+
+  /* ---- the form timer replaces asking the user how long this took ---- */
+  startTimer(){
+    UI.form.openedAt = Date.now();
+    clearInterval(UI.form.timer);
+    const tick = () => {
+      const s = Math.round((Date.now() - UI.form.openedAt) / 1000);
+      $("#formTimer").textContent = "Time on this form: " + (s < 60 ? s + "s" : Math.floor(s / 60) + "m " + (s % 60) + "s") + " (recorded automatically)";
+    };
+    tick();
+    UI.form.timer = setInterval(tick, 1000);
+  },
+  seconds(){ return Math.round((Date.now() - UI.form.openedAt) / 1000); },
+
+  setType(t){
+    UI.form.type = t;
+    $$("#typeRow button").forEach(btn => btn.setAttribute("aria-pressed", btn.dataset.type === t));
+    $("#impactBox").hidden = t !== "patient";
+  },
+  setSeverity(v){
+    UI.form.severity = v;
+    $$("#rateRow button").forEach(btn => btn.setAttribute("aria-pressed", Number(btn.dataset.v) === v));
+    $("#rateLegend").textContent = v + " — " + SEVERITY[v].label;
+  },
+  impactPreview(){
+    const weekly = num($("#iFreq").value) * num($("#iPer").value);
+    const hrs = Math.round(weekly / 6) / 10;
+    $("#impactPreview").textContent = weekly
+      ? "Estimated " + Math.round(weekly) + " minutes a week (" + hrs + (hrs === 1 ? " hour" : " hours") + ") lost across the team."
+      : "Add a time per occurrence and the weekly impact is calculated for you.";
+  },
+
+  readInput(){
+    return {
+      name: $("#iName").value.trim(),
+      unit: $("#iUnit").value,
+      area: $("#iArea").value.trim(),
+      process: $("#iProcess").value.trim(),
+      problem: $("#iProblem").value.trim(),
+      solution: $("#iSolution").value.trim(),
+      severity: UI.form.severity,
+      type: UI.form.type,
+      privacy: $("#iPrivacy").value,
+      formSeconds: Form.seconds(),
+      patientImpact: UI.form.type === "patient" ? {
+        frequency: num($("#iFreq").value),
+        timePerOccurrence: num($("#iPer").value),
+        peopleAffected: num($("#iPeople").value),
+        expectedWeeklySaving: num($("#iSaved").value),
+        preventsErrors: $("#iPrevents").value,
+        estimatedWeeklyImpact: num($("#iFreq").value) * num($("#iPer").value)
+      } : Model.blankpatientImpact()
+    };
+  },
+
+  /* ---- duplicate detection (create mode only) ---- */
+  checkDuplicates(){
+    if(UI.form.mode !== "create") return;
+    const draft = { problem: $("#iProblem").value, process: $("#iProcess").value, area: $("#iArea").value, solution: $("#iSolution").value };
+    if(Similar.tokens(draft.problem).size < 4){ $("#dupPanel").innerHTML = ""; return; }
+    const hits = Similar.find(draft, Storage.all(), 3);
+    if(!hits.length){ $("#dupPanel").innerHTML = ""; return; }
+    $("#dupPanel").innerHTML = '<div class="dup"><b>Possible existing bubbles</b>' +
+      '<div class="small muted" style="margin:4px 0 8px">Supporting an existing bubble makes it bigger and gets it seen faster. You can still raise a new one if yours is genuinely different.</div>' +
+      hits.map(h => {
+        const b = h.bubble;
+        return '<div class="dup-item"><span class="t">' + esc(b.problem.slice(0, 90)) + (b.problem.length > 90 ? "…" : "") +
+          '<div class="small muted">' + esc(b.ref) + ' · ' + esc(b.unit) + ' · ' + Calc.supportCount(b) + (Calc.supportCount(b) === 1 ? ' person' : ' people') + ' already supports this</div></span>' +
+          '<button class="btn sm ghost" data-dup-view="' + b.id + '">View</button>' +
+          (Auth.can("support", b) ? '<button class="btn sm" data-dup-support="' + b.id + '">Support this instead</button>' : '') +
+        '</div>';
+      }).join("") + '</div>';
+  },
+
+  submit(){
+    if(UI.form.submitting) return;
+    const input = Form.readInput();
+    const errs = Validate.bubble(input);
+    if(errs.length){
+      $("#formErr").hidden = false;
+      $("#formErr").innerHTML = errs.map(esc).join("<br>");
+      return;
+    }
+    UI.form.submitting = true;
+    $("#submitBubble").disabled = true;
+    try {
+      if(UI.form.mode === "edit") Form.applyEdit(input);
+      else Form.createNew(input);
+    } finally {
+      UI.form.submitting = false;
+      $("#submitBubble").disabled = false;
+    }
+  },
+
+  createNew(input){
+    /* guard against a double submission of the same text */
+    const recent = Storage.all().find(b => b.creatorId === input.name && b.problem === input.problem &&
+      (Clock.now() - b.createdAt) < 60000);
+    if(recent){ UI.toast("That bubble has already been raised."); UI.closeModals(); return; }
+
+    Storage.state.user.name = input.name;
+    Storage.state.user.unit = input.unit;
+    const b = Model.create(input, { name: input.name, role: Auth.role() }, Clock.now());
+    Storage.addBubble(b);
+    UI.closeModals();
+    UI.userTab = "mine"; UI.userChip = "all";
+    UI.render();
+    UI.toast("Bubble " + b.ref + " raised. Colleagues can now support it.");
+    Detail.open(b.id);
+  },
+
+  applyEdit(input){
+    const b = Storage.get(UI.form.id);
+    if(!b || !Auth.can("edit", b)){ UI.toast("You can only edit your own open bubble."); return; }
+    const next = {
+      area: input.area, process: input.process, problem: input.problem, solution: input.solution,
+      severity: input.severity, privacy: input.privacy,
+      "patientImpact.frequency": input.patientImpact.frequency,
+      "patientImpact.timePerOccurrence": input.patientImpact.timePerOccurrence,
+      "patientImpact.peopleAffected": input.patientImpact.peopleAffected,
+      "patientImpact.expectedWeeklySaving": input.patientImpact.expectedWeeklySaving,
+      "patientImpact.preventsErrors": input.patientImpact.preventsErrors
+    };
+    const entries = [];
+    const at = Clock.now();
+    Object.keys(next).forEach(path => {
+      if(b.type !== "patient" && path.indexOf("patientImpact") === 0) return;
+      const from = Model.get(b, path), to = next[path];
+      if(String(from == null ? "" : from) === String(to == null ? "" : to)) return;
+      entries.push({
+        at: at, actor: Auth.name(), role: Auth.role(),
+        action: path === "severity" ? "severity_changed" : "edited",
+        field: Model.EDITABLE[path] || path, from: from, to: to
+      });
+      Model.set(b, path, to);
+    });
+    if(b.type === "patient") b.patientImpact.estimatedWeeklyImpact = num(b.patientImpact.frequency) * num(b.patientImpact.timePerOccurrence);
+
+    if(!entries.length){ UI.toast("Nothing changed."); UI.closeModals(); return; }
+    Storage.updateBubble(b.id, null, entries);
+    UI.closeModals();
+    UI.render();
+    UI.toast(entries.length + " change" + (entries.length > 1 ? "s" : "") + " saved to the history.");
+    Detail.open(b.id);
+  }
+};
+
+/* =======================================================================
+   DETAIL — overview / activity / ops actions
+   ======================================================================= */
+const Detail = {
+  open(id, tab){
+    const b = Storage.get(id);
+    if(!b) return;
+    UI.detail = { id: id, tab: tab || "overview", panel: null };
+    Detail.render();
+    UI.show("#detailVeil");
+  },
+  render(){
+    const b = Storage.get(UI.detail.id);
+    if(!b) return;
+    const isOps = Auth.isOps();
+    $("#dTabOps").hidden = !isOps;
+    if(!isOps && UI.detail.tab === "ops") UI.detail.tab = "overview";
+    $("#dTabOverview").setAttribute("aria-selected", UI.detail.tab === "overview");
+    $("#dTabActivity").setAttribute("aria-selected", UI.detail.tab === "activity");
+    $("#dTabOps").setAttribute("aria-selected", UI.detail.tab === "ops");
+
+    $("#dRef").innerHTML = esc(b.ref) + ' · ' + esc(b.unit) + ' · ' + esc(b.area) + ' · ' + esc(b.process) + ' ' + UI.demoPill(b);
+    $("#dTitle").textContent = b.problem.slice(0, 120) + (b.problem.length > 120 ? "…" : "");
+
+    if(UI.detail.tab === "overview")      $("#dBody").innerHTML = Detail.overview(b);
+    else if(UI.detail.tab === "activity") $("#dBody").innerHTML = Detail.activity(b);
+    else                                  $("#dBody").innerHTML = Detail.ops(b);
+    $("#dFoot").innerHTML = Detail.foot(b);
+    Detail.bindOps(b);
+  },
+
+  overview(b){
+    const W = Storage.state.weights;
+    const pr = Calc.pressure(b, W);
+    const stage = Calc.stage(b);
+    const ratio = Calc.recoveryRatio(b);
+    const payback = Calc.paybackWeeks(b);
+    const rows = [
+      ["Status", STATUS[b.status].label],
+      ["Severity", b.severity + " / 5 — " + SEVERITY[b.severity].label],
+      ["Support", people(Calc.supportCount(b))],
+      ["Age", b.type === "patient" ? "day " + Math.floor(Calc.ageDays(b)) + " of " + LIFECYCLE.BREACH : UI.ageText(b)],
+      ["Owner", b.owner || "Unassigned"],
+      ["Target date", b.targetDate ? Clock.fmtDate(b.targetDate) : "Not set"],
+      ["Raised by", Auth.displayCreator(b)],
+      ["Raised", Clock.fmt(b.createdAt)],
+      ["Last updated", Clock.fmt(b.updatedAt)],
+      ["Type", b.type === "patient" ? "patient-facing" : "Internal"]
+    ];
+
+    const impact = b.type === "patient" ? '<div class="box accent"><h4>patient impact</h4><div class="dgrid">' +
+      [["Frequency", (FREQUENCIES.find(f => f.v === num(b.patientImpact.frequency)) || { label: b.patientImpact.frequency + "/week" }).label],
+       ["Time per occurrence", (b.patientImpact.timePerOccurrence || 0) + " min"],
+       ["Estimated weekly impact", Math.round(Calc.weeklyMinutes(b)) + " min"],
+       ["patients affected", (b.patientImpact.peopleAffected || 0) + " / week"],
+       ["Expected weekly saving", (b.patientImpact.expectedWeeklySaving || 0) + " min"],
+       ["Prevents errors / risk", { yes:"Yes", partly:"Partly", no:"No" }[b.patientImpact.preventsErrors] || "—"]
+      ].map(r => '<div class="dg"><div class="k">' + esc(r[0]) + '</div><div class="v">' + esc(String(r[1])) + '</div></div>').join("") +
+      '</div>' +
+      (ratio ? '<div class="small muted" style="margin-top:10px">Recovery ratio: about <b>' + ratio + '×</b> — the time this costs the team each week compared with the ' +
+        Math.max(1, Math.round((b.meta.formSeconds || 0) / 60)) + ' minute(s) it took to report it. This is a reporting-effort ratio, not a payback figure.</div>' : "") +
+      (payback != null ? '<div class="small muted" style="margin-top:6px">Estimated payback: <b>' + payback + ' weeks</b> (' + b.resolution.effortHours + ' h of fix effort against the expected weekly saving).</div>' : "") +
+      '</div>' : "";
+
+    const lifecycle = b.type === "patient" ? '<div class="box ' + (stage.tone === "hot" ? "hot" : stage.tone === "warn" ? "warn" : "") + '">' +
+      '<h4>Lifecycle</h4><p style="font-size:13.5px">Day ' + Math.floor(Calc.ageDays(b)) + '. ' + esc(stage.label) + '. ' +
+      'patient-facing bubbles sit quietly for ' + LIFECYCLE.GROW + ' days, escalate from day ' + LIFECYCLE.GROW +
+      ', reach manager attention at day ' + LIFECYCLE.MANAGER + ' and breach at day ' + LIFECYCLE.BREACH +
+      '. After that they stay visible as overdue until a decision is recorded — they never disappear.</p>' +
+      '<div class="meter ' + (stage.pressure > 0.6 ? "hot" : "") + '" style="margin-top:9px"><i style="width:' +
+        Math.round(Math.min(1, Calc.ageDays(b) / LIFECYCLE.BREACH) * 100) + '%"></i></div></div>' : "";
+
+    const supporters = (b.supporters || []).length ? '<div class="box"><h4>Supported by ' + b.supporters.length + ' others</h4>' +
+      b.supporters.map(s => '<div class="small" style="padding:4px 0">' + esc(s.user) + ' — <span class="muted">' +
+        esc(SUPPORT_REASONS[s.reason] || "supports this") + (s.comment ? ": " + esc(s.comment) : "") + '</span></div>').join("") + '</div>' : "";
+
+    const resolution = b.resolution.resolvedAt ? '<div class="box" style="border-color:rgba(79,209,165,.4)">' +
+      '<h4>Resolution — ' + esc(OUTCOMES[b.resolution.outcome] || "recorded") + ' · ' + esc(Clock.fmt(b.resolution.resolvedAt)) + '</h4>' +
+      '<p>' + esc(b.resolution.response) + '</p>' +
+      '<div class="dgrid" style="margin-top:10px">' +
+        '<div class="dg"><div class="k">Expected benefit</div><div class="v">' + esc(b.resolution.expectedBenefit || "—") + '</div></div>' +
+        '<div class="dg"><div class="k">Actual benefit</div><div class="v">' + esc(b.resolution.actualBenefit || "not yet measured") + '</div></div>' +
+        '<div class="dg"><div class="k">patients affected before</div><div class="v">' + (b.resolution.patientsBefore != null ? b.resolution.patientsBefore : "—") + '</div></div>' +
+        '<div class="dg"><div class="k">…and after</div><div class="v">' + (b.resolution.patientsAfter != null ? b.resolution.patientsAfter : "—") + '</div></div>' +
+      '</div></div>' : "";
+
+    const deletion = b.deletion.requested ? '<div class="box ' + (b.deletion.approvedAt ? "" : "warn") + '">' +
+      '<h4>Removal ' + (b.deletion.approvedAt ? "approved" : b.deletion.rejectedAt ? "rejected" : "requested by the creator") + '</h4>' +
+      '<p style="font-size:13.5px">Reason: <b>' + esc(DELETE_REASONS[b.deletion.reason] || "—") + '</b>' +
+      (b.deletion.description ? '\n' + esc(b.deletion.description) : '') +
+      '\nRequested ' + esc(Clock.fmt(b.deletion.requestedAt)) + ' by ' + esc(b.deletion.requestedBy) +
+      (b.deletion.approvedAt ? '\nApproved ' + esc(Clock.fmt(b.deletion.approvedAt)) + ' by ' + esc(b.deletion.approvedBy) : '') +
+      (b.deletion.rejectedAt ? '\nRejected ' + esc(Clock.fmt(b.deletion.rejectedAt)) + ' by ' + esc(b.deletion.rejectedBy) : '') +
+      '</p></div>' : "";
+
+    return '<div class="box"><h4>Bubble pressure — why this deserves attention</h4><div class="pressure">' +
+        '<div><div class="pnum" style="color:' + (pr.score > 65 ? "var(--hot)" : pr.score > 40 ? "var(--warn)" : "var(--glow)") + '">' + pr.score + '</div><div class="small muted">out of 100</div></div>' +
+        '<div class="pfactors">' + pr.factors.map(f =>
+          '<div class="pf"><span>' + esc(f.label) + '</span><span class="bar"><i style="width:' + Math.round(f.ratio * 100) + '%"></i></span>' +
+          '<span>' + Math.round(f.points) + '/' + f.max + '</span></div>' +
+          '<div class="small muted" style="margin:-4px 0 2px 0">' + esc(f.detail) + '</div>').join("") +
+        '</div></div>' +
+        '<div class="small muted" style="margin-top:8px">Size on the field comes from support alone; colour is severity; the glow is age pressure. Weightings are configurable in Settings.</div>' +
+      '</div>' +
+      '<div class="dgrid">' + rows.map(r => '<div class="dg"><div class="k">' + esc(r[0]) + '</div><div class="v">' + esc(String(r[1])) + '</div></div>').join("") + '</div>' +
+      '<div class="box"><h4>The problem</h4><p>' + esc(b.problem) + '</p></div>' +
+      '<div class="box"><h4>Suggested solution</h4><p>' + esc(b.solution || "None suggested.") + '</p></div>' +
+      impact + lifecycle + supporters + resolution + deletion +
+      Detail.panel(b);
+  },
+
+  /* inline panels: support reason, removal request */
+  panel(b){
+    if(UI.detail.panel === "support"){
+      return '<div class="box accent"><h4>Why are you supporting this?</h4>' +
+        '<label class="f">Reason (optional)<select id="supReason">' +
+          Object.keys(SUPPORT_REASONS).map(k => '<option value="' + k + '">' + SUPPORT_REASONS[k] + '</option>').join("") +
+        '</select></label>' +
+        '<label class="f" style="margin-top:10px">Add a short comment (optional)<input id="supComment" placeholder="e.g. happens on every Monday peak" /></label>' +
+        '<div style="display:flex;gap:8px;margin-top:12px"><button class="btn primary" id="supConfirm">Add my support</button>' +
+        '<button class="btn ghost" data-panel="">Cancel</button></div></div>';
+    }
+    if(UI.detail.panel === "delete"){
+      return '<div class="box hot"><h4>Why do you want to remove this bubble?</h4>' +
+        '<div class="small muted" style="margin-bottom:10px">The record is never deleted. It is marked as withdrawn, kept in the history, and ops is asked to approve.</div>' +
+        '<label class="f">Reason<select id="delReason">' +
+          Object.keys(DELETE_REASONS).map(k => '<option value="' + k + '">' + DELETE_REASONS[k] + '</option>').join("") +
+        '</select></label>' +
+        '<label class="f" style="margin-top:10px">Description <span class="muted">(required for “Other”, at least two words)</span>' +
+          '<textarea id="delDesc" placeholder="Tell ops what happened."></textarea></label>' +
+        '<div class="err" id="delErr" hidden></div>' +
+        '<div style="display:flex;gap:8px;margin-top:10px"><button class="btn danger" id="delConfirm">Request removal</button>' +
+        '<button class="btn ghost" data-panel="">Cancel</button></div></div>';
+    }
+    return "";
+  },
+
+  activity(b){
+    const items = (b.activity || []).slice().sort((x, y) => y.at - x.at);
+    return '<div class="box"><h4>Full history — nothing is overwritten or removed</h4><ul class="timeline">' +
+      items.map(a => {
+        let detail = "";
+        if(a.from !== undefined && a.to !== undefined)
+          detail = '<div class="diff"><span class="from">' + esc(String(a.from || "—")) + '</span> → <span class="to">' + esc(String(a.to || "—")) + '</span></div>';
+        else if(a.note)
+          detail = '<div class="diff">' + esc(a.note) + '</div>';
+        return '<li class="tl"><span class="when">' + esc(Clock.fmt(a.at)) + '</span><span class="what"><b>' +
+          esc(ACTION_LABEL[a.action] || a.action) + '</b>' + (a.field ? ' — ' + esc(a.field) : '') +
+          '<div class="small muted">by ' + esc(a.actor) + (a.role === "ops" ? " (ops)" : "") + '</div>' + detail + '</span></li>';
+      }).join("") + '</ul></div>';
+  },
+
+  ops(b){
+    const opts = (obj, val) => Object.keys(obj).map(k => '<option value="' + k + '"' + (k === val ? " selected" : "") + '>' + esc(obj[k].label || obj[k]) + '</option>').join("");
+    return '<div class="box"><h4>Ownership and status</h4><div class="grid3">' +
+        '<label class="f">Owner<select id="opsOwner">' + OWNER_OPTIONS.map(o =>
+          '<option value="' + esc(o) + '"' + (o === b.owner ? " selected" : "") + '>' + (o || "Unassigned") + '</option>').join("") + '</select></label>' +
+        '<label class="f">Status<select id="opsStatus">' + opts(STATUS, b.status) + '</select></label>' +
+        '<label class="f">Target date<input type="date" id="opsTarget" value="' + Clock.dateInput(b.targetDate) + '" /></label>' +
+      '</div></div>' +
+      '<div class="box"><h4>Decision / outcome</h4>' +
+        '<div class="grid2">' +
+          '<label class="f">Outcome<select id="opsOutcome"><option value="">Choose an outcome…</option>' + opts(OUTCOMES, b.resolution.outcome) + '</select></label>' +
+          '<label class="f">Fix effort (hours, for payback)<input type="number" min="0" step="0.5" id="opsEffort" value="' + (b.resolution.effortHours == null ? "" : b.resolution.effortHours) + '" /></label>' +
+        '</div>' +
+        '<label class="f" style="margin-top:12px">Ops response — required before a bubble can be popped' +
+          '<textarea id="opsResponse" placeholder="What was decided, what happens next, and who is doing it.">' + esc(b.resolution.response) + '</textarea></label>' +
+        '<div class="grid2" style="margin-top:12px">' +
+          '<label class="f">Expected benefit<input id="opsExpected" value="' + esc(b.resolution.expectedBenefit) + '" placeholder="e.g. 240 min/week returned" /></label>' +
+          '<label class="f">Actual benefit (after the fix)<input id="opsActual" value="' + esc(b.resolution.actualBenefit) + '" placeholder="measured later" /></label>' +
+        '</div>' +
+        '<div class="grid2" style="margin-top:12px">' +
+          '<label class="f">patients affected before<input type="number" min="0" id="opsBefore" value="' + (b.resolution.patientsBefore == null ? "" : b.resolution.patientsBefore) + '" /></label>' +
+          '<label class="f">patients affected after<input type="number" min="0" id="opsAfter" value="' + (b.resolution.patientsAfter == null ? "" : b.resolution.patientsAfter) + '" /></label>' +
+        '</div>' +
+        '<div class="err" id="opsErr" hidden></div>' +
+      '</div>' +
+      (b.deletion.requested && !b.deletion.approvedAt && !b.deletion.rejectedAt ?
+        '<div class="box warn"><h4>Removal requested by the creator</h4>' +
+        '<p style="font-size:13.5px">' + esc(DELETE_REASONS[b.deletion.reason]) + (b.deletion.description ? " — " + esc(b.deletion.description) : "") + '</p>' +
+        '<div style="display:flex;gap:8px;margin-top:10px">' +
+          '<button class="btn ok" data-approve="' + b.id + '">Approve removal</button>' +
+          '<button class="btn danger" data-reject="' + b.id + '">Reject removal</button></div></div>' : "");
+  },
+
+  foot(b){
+    const parts = [];
+    if(UI.detail.tab === "ops"){
+      parts.push('<button class="btn" id="opsSave">Save update</button>');
+      parts.push('<button class="btn primary" id="opsPop">Pop bubble</button>');
+    } else {
+      if(Auth.can("support", b)){
+        const supporting = (b.supporters || []).some(s => s.user === Auth.name());
+        parts.push(supporting
+          ? '<button class="btn ghost" id="unsupport">Remove my support</button>'
+          : '<button class="btn primary" data-panel="support">Support this bubble</button>');
+      }
+      if(Auth.can("edit", b))          parts.push('<button class="btn" id="editBubble">Edit bubble</button>');
+      if(Auth.can("requestDelete", b)) parts.push('<button class="btn ghost" data-panel="delete">Request removal</button>');
+      if(Auth.isOps())                 parts.push('<button class="btn primary" id="goOps">Ops actions</button>');
+    }
+    parts.unshift('<button class="btn ghost" data-close>Close</button>');
+    return parts.join("");
+  },
+
+  bindOps(b){
+    const pop = $("#opsPop");
+    if(pop){
+      const sync = () => {
+        const ok = $("#opsResponse").value.trim().length >= 10 && !!$("#opsOutcome").value;
+        pop.disabled = !ok || Calc.isClosed(b);
+        pop.title = ok ? "" : "Write a response and choose an outcome first";
+      };
+      $("#opsResponse").addEventListener("input", sync);
+      $("#opsOutcome").addEventListener("change", sync);
+      sync();
+      $("#opsSave").onclick = () => Actions.opsSave(b.id, false);
+      pop.onclick = () => Actions.opsSave(b.id, true);
+    }
+    const sup = $("#supConfirm");
+    if(sup) sup.onclick = () => Actions.support(b.id, $("#supReason").value, $("#supComment").value.trim());
+    const del = $("#delConfirm");
+    if(del) del.onclick = () => Actions.requestDeletion(b.id, $("#delReason").value, $("#delDesc").value.trim());
+    const un = $("#unsupport");
+    if(un) un.onclick = () => Actions.unsupport(b.id);
+    const ed = $("#editBubble");
+    if(ed) ed.onclick = () => { UI.closeModals(); Form.open("edit", b.id); };
+    const go = $("#goOps");
+    if(go) go.onclick = () => { UI.detail.tab = "ops"; Detail.render(); };
+  }
+};
+
+/* =======================================================================
+   ACTIONS — every state change goes through here, then through Storage
+   ======================================================================= */
+const Actions = {
+  support(id, reason, comment){
+    const b = Storage.get(id);
+    if(!b) return;
+    if(!Auth.name()){ UI.toast("Add your name first (top right)."); return; }
+    if(!Auth.can("support", b)){ UI.toast("You cannot support your own bubble."); return; }
+    if((b.supporters || []).some(s => s.user === Auth.name())){ UI.toast("You already support this."); return; }
+    const at = Clock.now();
+    Storage.updateBubble(id, x => {
+      x.supporters.push({ user: Auth.name(), reason: reason || "affects_me", comment: comment || "", at: at });
+    }, [{ at: at, actor: Auth.name(), role: Auth.role(), action: "supported",
+          note: (SUPPORT_REASONS[reason] || SUPPORT_REASONS.affects_me) + (comment ? " — " + comment : "") }]);
+    UI.detail.panel = null;
+    UI.render();
+    if(!$("#detailVeil").hidden) Detail.render();
+    UI.toast("Support added — the bubble just grew.");
+  },
+
+  unsupport(id){
+    const at = Clock.now();
+    Storage.updateBubble(id, x => {
+      x.supporters = x.supporters.filter(s => s.user !== Auth.name());
+    }, [{ at: at, actor: Auth.name(), role: Auth.role(), action: "support_removed" }]);
+    UI.render();
+    if(!$("#detailVeil").hidden) Detail.render();
+    UI.toast("Support removed.");
+  },
+
+  requestDeletion(id, reason, description){
+    const errs = Validate.deletion(reason, description);
+    if(errs.length){ $("#delErr").hidden = false; $("#delErr").innerHTML = errs.map(esc).join("<br>"); return; }
+    const at = Clock.now();
+    Storage.updateBubble(id, b => {
+      b.deletion = Object.assign(b.deletion, {
+        requested: true, reason: reason, description: description,
+        requestedAt: at, requestedBy: Auth.name()
+      });
+      b.statusBeforeDeletion = b.status;
+      b.status = "deletion_requested";
+    }, [{ at: at, actor: Auth.name(), role: Auth.role(), action: "deletion_requested",
+          note: DELETE_REASONS[reason] + (description ? " — " + description : "") }]);
+    UI.detail.panel = null;
+    UI.render(); Detail.render();
+    UI.toast("Removal requested. Ops will review it — the record stays in the history.");
+  },
+
+  approveDeletion(id){
+    if(!Auth.isOps()) return;
+    const at = Clock.now();
+    Storage.updateBubble(id, b => {
+      b.deletion.approvedAt = at;
+      b.deletion.approvedBy = Auth.name() || "Ops";
+      b.status = "withdrawn";                      /* never hard-deleted */
+    }, [{ at: at, actor: Auth.name() || "Ops", role: "ops", action: "deletion_approved",
+          field: "Status", from: "Removal requested", to: "Withdrawn by creator" }]);
+    UI.render();
+    if(!$("#detailVeil").hidden) Detail.render();
+    UI.toast("Removal approved. The bubble is archived as withdrawn, with its reason.");
+  },
+
+  rejectDeletion(id){
+    if(!Auth.isOps()) return;
+    const at = Clock.now();
+    Storage.updateBubble(id, b => {
+      b.deletion.rejectedAt = at;
+      b.deletion.rejectedBy = Auth.name() || "Ops";
+      b.deletion.requested = false;
+      b.status = b.statusBeforeDeletion && STATUS[b.statusBeforeDeletion] ? b.statusBeforeDeletion : "under_review";
+    }, [{ at: at, actor: Auth.name() || "Ops", role: "ops", action: "deletion_rejected",
+          field: "Status", from: "Removal requested", to: "Active again" }]);
+    UI.render();
+    if(!$("#detailVeil").hidden) Detail.render();
+    UI.toast("Removal rejected — the bubble is active again.");
+  },
+
+  opsSave(id, alsoPop){
+    const b = Storage.get(id);
+    if(!b || !Auth.isOps()) return;
+    const fields = {
+      owner: $("#opsOwner").value,
+      status: $("#opsStatus").value,
+      target: $("#opsTarget").value ? new Date($("#opsTarget").value + "T12:00:00").getTime() : null,
+      outcome: $("#opsOutcome").value,
+      response: $("#opsResponse").value.trim(),
+      expected: $("#opsExpected").value.trim(),
+      actual: $("#opsActual").value.trim(),
+      effort: $("#opsEffort").value === "" ? null : num($("#opsEffort").value),
+      before: $("#opsBefore").value === "" ? null : num($("#opsBefore").value),
+      after: $("#opsAfter").value === "" ? null : num($("#opsAfter").value)
+    };
+    if(alsoPop){
+      const errs = Validate.opsResolution(fields);
+      if(errs.length){ $("#opsErr").hidden = false; $("#opsErr").innerHTML = errs.map(esc).join("<br>"); return; }
+    }
+    const at = Clock.now();
+    const entries = [];
+    const actor = Auth.name() || "Ops";
+
+    if(fields.owner !== b.owner)
+      entries.push({ at: at, actor: actor, role: "ops", action: "owner_changed", field: "Owner", from: b.owner || "Unassigned", to: fields.owner || "Unassigned" });
+    if(fields.target !== b.targetDate)
+      entries.push({ at: at, actor: actor, role: "ops", action: "target_changed", field: "Target date", from: Clock.fmtDate(b.targetDate), to: Clock.fmtDate(fields.target) });
+    if(fields.response && fields.response !== b.resolution.response)
+      entries.push({ at: at, actor: actor, role: "ops", action: "ops_comment", note: fields.response });
+
+    let newStatus = fields.status;
+    if(alsoPop) newStatus = "resolved";
+    if(newStatus !== b.status)
+      entries.push({ at: at, actor: actor, role: "ops", action: "status_changed", field: "Status", from: STATUS[b.status].label, to: STATUS[newStatus].label });
+
+    Storage.updateBubble(id, x => {
+      x.owner = fields.owner;
+      x.targetDate = fields.target;
+      x.status = newStatus;
+      Object.assign(x.resolution, {
+        outcome: fields.outcome || x.resolution.outcome,
+        response: fields.response || x.resolution.response,
+        expectedBenefit: fields.expected,
+        actualBenefit: fields.actual,
+        effortHours: fields.effort,
+        patientsBefore: fields.before,
+        patientsAfter: fields.after
+      });
+      if(alsoPop){
+        x.resolution.popped = true;
+        x.resolution.resolvedAt = at;
+        x.resolution.resolvedBy = actor;
+      }
+    }, entries);
+
+    if(alsoPop){
+      Storage.addActivity(id, { at: at, actor: actor, role: "ops", action: "resolved", note: fields.response });
+      const el = document.querySelector('.bub[data-open="' + id + '"]');
+      UI.closeModals();
+      if(el){ el.classList.add("popping"); setTimeout(() => UI.render(), 430); }
+      else UI.render();
+      UI.toast("Popped. The answer is permanently on the record.");
+    } else {
+      UI.render();
+      Detail.render();
+      UI.toast(entries.length ? "Update saved to the history." : "No changes to save.");
+    }
+  }
+};
+/* =======================================================================
+   SETTINGS
+   ======================================================================= */
+const Settings = {
+  open(){
+    $("#sPin").value = Storage.state.pin;
+    $("#sDays").value = Storage.state.offset;
+    const w = Storage.state.weights;
+    $("#wSupport").value = w.support; $("#wSeverity").value = w.severity;
+    $("#wImpact").value = w.impact;   $("#wReach").value = w.reach; $("#wAge").value = w.age;
+    Settings.syncWeights();
+    Settings.dayLabel();
+    UI.show("#setVeil");
+  },
+  dayLabel(){
+    const o = Storage.state.offset;
+    $("#sDaysLabel").textContent = o === 0
+      ? "Logical date is today. Drag forward to watch unanswered patient-facing bubbles escalate."
+      : "Logical date is " + o + " day" + (o > 1 ? "s" : "") + " from now — used for ageing, new bubbles and history timestamps alike.";
+  },
+  syncWeights(){
+    const w = {
+      support: num($("#wSupport").value), severity: num($("#wSeverity").value),
+      impact: num($("#wImpact").value), reach: num($("#wReach").value), age: num($("#wAge").value)
+    };
+    const total = w.support + w.severity + w.impact + w.reach + w.age;
+    $("#wTotal").value = total + (total === 100 ? " ✓" : " (should total 100)");
+    Storage.state.weights = w;
+    Storage.save();
+  }
+};
+
+/* =======================================================================
+   EVENT WIRING
+   ======================================================================= */
+function wire(){
+  /* ---- shell ---- */
+  $("#tabUser").onclick = () => { UI.mode = "user"; UI.render(); };
+  $("#tabOps").onclick  = () => { UI.mode = "ops";  UI.render(); };
+  $("#themeBtn").onclick = () => {
+    Storage.setSetting("theme", Storage.state.theme === "deep" ? "milk" : "deep");
+    UI.render();
   };
-  r.readAsText(f); e.target.value="";
-});
-$("#sSeed").onclick = () => { S.bubbles = seed(); S.offset = 0; save(); renderAll(); toast("Demo bubbles reloaded."); };
-$("#sWipe").onclick = () => { if(confirm("Erase every bubble on this device?")){ S.bubbles=[]; save(); renderAll(); toast("Field cleared."); } };
+  $("#whoChip").onclick = () => {
+    const n = prompt("Who is using this device?", Auth.name());
+    if(n !== null){
+      Storage.state.user.name = n.trim();
+      Storage.save();
+      UI.render();
+    }
+  };
 
-/* ---------------- plumbing ---------------- */
-function show(sel){ $(sel).hidden = false; }
-function hide(sel){ $(sel).hidden = true; }
-document.addEventListener("click", e => { if(e.target.closest("[data-close]") || e.target.classList.contains("veil")) $$(".veil").forEach(v => v.hidden = true); });
-document.addEventListener("keydown", e => { if(e.key==="Escape") $$(".veil").forEach(v => v.hidden = true); });
-let tId; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tId); tId=setTimeout(()=>t.classList.remove("show"),2600); }
-let rId; addEventListener("resize", () => { clearTimeout(rId); rId=setTimeout(()=>{ if(mode==="admin"&&unlocked&&adminView==="field") renderField(); },180); });
-function renderAll(){ renderWho(); renderUser(); if(mode==="admin") renderAdmin(); }
-renderAll();
+  /* ---- user view ---- */
+  $("#tabMine").onclick      = () => { UI.userTab = "mine";      UI.userChip = "all";     UI.render(); };
+  $("#tabExplore").onclick   = () => { UI.userTab = "explore";   UI.userChip = "biggest"; UI.render(); };
+  $("#tabSupported").onclick = () => { UI.userTab = "supported"; UI.userChip = "all";     UI.render(); };
+  $("#userChips").addEventListener("click", e => {
+    const c = e.target.closest("[data-chip]");
+    if(c){ UI.userChip = c.dataset.chip; UI.render(); }
+  });
+  const openForm = () => {
+    if(!Auth.name()){
+      const n = prompt("What name or employee ID should this bubble be raised under?", "");
+      if(!n || !n.trim()) return;
+      Storage.state.user.name = n.trim(); Storage.save(); UI.renderShell();
+    }
+    Form.open("create");
+  };
+  $("#newBubbleBtn").onclick = openForm;
+  $("#fabNew").onclick = openForm;
+
+  /* ---- ops gate ---- */
+  const tryPin = () => {
+    if(Auth.signInOps($("#pin").value)){ $("#pin").value = ""; UI.render(); }
+    else { UI.toast("That code does not match. The demo code is 1234."); $("#pin").select(); }
+  };
+  $("#pinBtn").onclick = tryPin;
+  $("#pin").addEventListener("keydown", e => { if(e.key === "Enter") tryPin(); });
+
+  /* ---- ops views + filters ---- */
+  [["viewField","field"],["viewList","list"],["viewQueue","queue"],["viewDeletions","deletions"],["viewInsights","insights"]]
+    .forEach(v => { $("#" + v[0]).onclick = () => { UI.opsView = v[1]; UI.render(); }; });
+  $("#archiveBtn").onclick  = () => { UI.archive = !UI.archive; UI.render(); };
+  $("#filtersBtn").onclick  = () => { $("#filters").classList.toggle("open"); };
+  $("#settingsBtn").onclick = Settings.open;
+
+  const filterMap = { fSearch:"search", fUnit:"unit", fArea:"area", fProcess:"process", fType:"type",
+                      fSev:"sev", fStatus:"status", fOwner:"owner", fAge:"age", fFrom:"from", fTo:"to" };
+  Object.keys(filterMap).forEach(id => {
+    $("#" + id).addEventListener("input", () => { UI.filters[filterMap[id]] = $("#" + id).value; UI.render(); });
+  });
+  $("#fSort").addEventListener("change", () => UI.render());
+  $("#clearFilters").onclick = () => {
+    Object.keys(UI.filters).forEach(k => UI.filters[k] = "");
+    Object.keys(filterMap).forEach(id => { $("#" + id).value = ""; });
+    UI.render();
+  };
+  $("#kpis").addEventListener("click", e => {
+    const k = e.target.closest("[data-quick]");
+    if(!k) return;
+    const q = k.dataset.quick;
+    if(q === "deletions"){ UI.opsView = "deletions"; UI.render(); return; }
+    UI.filters.quick = (UI.filters.quick === q) ? "" : q;
+    UI.render();
+  });
+
+  /* ---- form ---- */
+  $("#typeRow").addEventListener("click", e => {
+    const b = e.target.closest("[data-type]");
+    if(b) Form.setType(b.dataset.type);
+  });
+  $("#rateRow").addEventListener("click", e => {
+    const b = e.target.closest("[data-v]");
+    if(b) Form.setSeverity(Number(b.dataset.v));
+  });
+  ["iFreq","iPer"].forEach(id => $("#" + id).addEventListener("input", Form.impactPreview));
+  let dupTimer = null;
+  ["iProblem","iProcess","iArea"].forEach(id => $("#" + id).addEventListener("input", () => {
+    clearTimeout(dupTimer);
+    dupTimer = setTimeout(Form.checkDuplicates, 450);
+  }));
+  $("#submitBubble").onclick = Form.submit;
+
+  /* ---- detail tabs ---- */
+  $("#dTabOverview").onclick = () => { UI.detail.tab = "overview"; Detail.render(); };
+  $("#dTabActivity").onclick = () => { UI.detail.tab = "activity"; Detail.render(); };
+  $("#dTabOps").onclick      = () => { UI.detail.tab = "ops";      Detail.render(); };
+
+  /* ---- settings ---- */
+  $("#sPin").addEventListener("input", e => Storage.setSetting("pin", e.target.value || "1234"));
+  $("#sDays").addEventListener("input", e => {
+    Storage.state.offset = Number(e.target.value);
+    Clock.offset = Storage.state.offset;
+    Storage.save();
+    Settings.dayLabel();
+    UI.render();
+  });
+  ["wSupport","wSeverity","wImpact","wReach","wAge"].forEach(id =>
+    $("#" + id).addEventListener("input", () => { Settings.syncWeights(); UI.render(); }));
+  $("#sExport").onclick = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([Storage.exportJSON()], { type: "application/json" }));
+    a.download = "bubble-data.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  $("#sImport").onclick = () => $("#fileIn").click();
+  $("#fileIn").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const data = JSON.parse(r.result);
+        if(!data || !Array.isArray(data.bubbles)) throw new Error("not a Bubble export");
+        Storage.replaceAll(data);
+        UI.render();
+        UI.toast("Data imported — " + Storage.all().length + " bubbles.");
+      } catch(err){ UI.toast("That file is not a Bubble export."); }
+    };
+    r.readAsText(file);
+    e.target.value = "";
+  });
+  $("#sSeed").onclick = () => {
+    Storage.resetDemo();
+    $("#sDays").value = 0;
+    Settings.dayLabel();
+    UI.render();
+    UI.toast("Demo bubbles reloaded (fictional data).");
+  };
+  $("#sWipe").onclick = () => {
+    if(confirm("Erase every bubble stored in this browser?")){
+      Storage.wipe();
+      UI.render();
+      UI.toast("All local data erased.");
+    }
+  };
+
+  /* ---- global delegated actions ---- */
+  document.addEventListener("click", e => {
+    if(e.target.closest("[data-close]") || e.target.classList.contains("veil")){ UI.closeModals(); return; }
+
+    const panel = e.target.closest("[data-panel]");
+    if(panel){ UI.detail.panel = panel.dataset.panel || null; Detail.render(); return; }
+
+    const sup = e.target.closest("[data-support]");
+    if(sup){
+      const b = Storage.get(sup.dataset.support);
+      if(b && (b.supporters || []).some(s => s.user === Auth.name())) Actions.unsupport(b.id);
+      else Actions.support(sup.dataset.support, "affects_me", "");
+      return;
+    }
+
+    const dupView = e.target.closest("[data-dup-view]");
+    if(dupView){ UI.closeModals(); Detail.open(dupView.dataset.dupView); return; }
+
+    const dupSup = e.target.closest("[data-dup-support]");
+    if(dupSup){ UI.closeModals(); Actions.support(dupSup.dataset.dupSupport, "affects_me", ""); Detail.open(dupSup.dataset.dupSupport); return; }
+
+    const ap = e.target.closest("[data-approve]");
+    if(ap){ Actions.approveDeletion(ap.dataset.approve); return; }
+
+    const rj = e.target.closest("[data-reject]");
+    if(rj){ Actions.rejectDeletion(rj.dataset.reject); return; }
+
+    const open = e.target.closest("[data-open]");
+    if(open){ Detail.open(open.dataset.open); return; }
+  });
+
+  document.addEventListener("keydown", e => { if(e.key === "Escape") UI.closeModals(); });
+
+  let rTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(rTimer);
+    rTimer = setTimeout(() => { if(UI.mode === "ops" && Auth.isOps() && UI.opsView === "field") UI.renderField(); }, 180);
+  });
+}
+
+/* =======================================================================
+   INIT
+   ======================================================================= */
+function init(){
+  Storage.load();
+  if(!Auth.name()){ UI.userTab = "explore"; UI.userChip = "biggest"; }   /* first run: show the field, not an empty list */
+  wire();
+  const banner = document.createElement("div");
+  banner.className = "demo-banner";
+  banner.id = "demoBanner";
+  banner.innerHTML = '<b>Demo mode</b> — this browser is showing fictional seed data (people, units and scenarios are invented) so the prototype has something to display. ' +
+    'Anything you raise sits alongside it without the demo badge. Settings → Erase all local data clears the lot.';
+  $("#userView").insertBefore(banner, $("#userView").firstChild);
+  UI.render();
+}
+
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+else init();
+
+/* Exposed for debugging and for automated checks. Not used by the UI. */
+window.BubbleApp = { Clock, Model, Calc, Similar, Validate, Storage, Auth, Demo, UI, Form, Detail, Actions, STATUS, SEVERITY, LIFECYCLE };
 })();
 </script>
 </body>
